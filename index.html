@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101a33">
+  <meta name="description" content="PAL v13: synchronized Room View, interactive Explorer Mode, and PAL Console prototype.">
+  <title>PAL MVP Demo v13</title>
+  <style>
+:root {
+  --ink:#101a33;
+  --ink-2:#1c315d;
+  --paper:#fffdf5;
+  --panel:#ffffff;
+  --blue:#315edc;
+  --blue-2:#5c7bf0;
+  --aqua:#55d4dc;
+  --mint:#b8f4da;
+  --sun:#ffd65a;
+  --coral:#ff7168;
+  --muted:#62708a;
+  --line:#14244a;
+  --shadow:rgba(20,36,74,.18);
+  --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Arial Rounded MT Bold", "Trebuchet MS", var(--font-ui);
+  --font-pixel: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:var(--font-ui);color:var(--ink);background:#dff8fb}
+button,input{font:inherit}
+button{color:inherit}
+[hidden]{display:none!important}
+.app{min-height:100dvh}
+.button{min-height:44px;border:3px solid var(--line);border-radius:12px;padding:9px 16px;background:#fff;box-shadow:4px 4px 0 var(--line);font-weight:900;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+.button:hover{transform:translate(-1px,-1px);box-shadow:6px 6px 0 var(--line)}
+.button:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--line)}
+.button.primary{background:var(--blue);color:#fff}
+.button.secondary{background:#fffdf6}
+.button.large{min-width:220px;font-size:17px}
+.eyebrow{font-family:var(--font-pixel);font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#2f58ce}
+.form-error{min-height:18px;margin:3px 0;color:#b32e35;font-weight:800;font-size:12px}
+
+/* Onboarding */
+.onboarding{min-height:100dvh;display:grid;place-items:center;padding:12px;background:radial-gradient(circle at 7% 5%,#fff2a5,transparent 28%),radial-gradient(circle at 92% 88%,#8de9ef,transparent 34%),#edfafd}
+.onboarding-shell{position:relative;width:min(1180px,calc(100vw - 24px));height:min(880px,calc(100dvh - 24px));min-height:640px;overflow:hidden;border:5px solid var(--line);border-radius:26px;background:#fffdf7;box-shadow:14px 14px 0 var(--shadow)}
+.onboarding-header{height:76px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 20px;border-bottom:4px solid var(--line);background:linear-gradient(90deg,#effcff,#fffdf5)}
+.brand{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}
+.brand-mark{width:44px;height:44px;display:grid;place-items:center;border:3px solid var(--line);border-radius:13px;background:linear-gradient(145deg,var(--sun),var(--coral));box-shadow:3px 3px 0 var(--line);font-family:var(--font-pixel);font-weight:950}
+.brand span:last-child{display:grid}.brand strong{font-size:20px}.brand small{font-size:11px;color:var(--muted);font-weight:750}
+.stepper{display:flex;align-items:center;gap:8px;margin:0;padding:0;list-style:none}
+.stepper li{min-width:104px;display:grid;grid-template-columns:28px 1fr;align-items:center;gap:7px;padding:7px 9px;border:2px solid #c9d4e4;border-radius:999px;color:#6b7890;background:#fff}
+.stepper li b{width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:#e7edf5;font-family:var(--font-pixel);font-size:12px}.stepper li span{font-size:11px;font-weight:900}
+.stepper li.active{border-color:var(--line);background:#fff2ae;color:var(--ink)}.stepper li.active b{background:var(--sun)}.stepper li.done{border-color:#4daf8b;background:#e6fff2;color:#165f4b}.stepper li.done b{background:#7fe0b8}
+.onboarding-body{height:calc(100% - 76px);display:grid;grid-template-columns:minmax(330px,.92fr) minmax(520px,1.28fr)}
+.art-card{position:relative;min-width:0;overflow:hidden;border-right:4px solid var(--line);background:linear-gradient(160deg,#43cfdb 0 36%,#3566da 36% 70%,#243f98 70%)}
+.art-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.10) 1px,transparent 1px);background-size:24px 24px;opacity:.5}
+.art-viewport{position:absolute;inset:14px 14px 92px;overflow:hidden;border:4px solid var(--line);border-radius:20px;background:linear-gradient(#c8fbff,#ffe3a4);box-shadow:8px 8px 0 rgba(16,26,51,.35);touch-action:none;cursor:grab;outline:none}
+.art-viewport:active{cursor:grabbing}.drag-hint{position:absolute;z-index:3;right:10px;bottom:10px;padding:6px 9px;border:2px solid var(--line);border-radius:999px;background:rgba(255,253,245,.92);font-size:10px;font-weight:950;pointer-events:none}
+.full-art-preview{position:absolute;left:50%;top:50%;width:min(90%,430px);height:115%;transform:translate(-50%,calc(-50% + var(--art-pan,0px)));transition:transform .12s ease-out;display:grid;place-items:center;filter:drop-shadow(10px 12px 0 rgba(16,26,51,.17))}
+.full-art-preview svg{width:100%;height:100%;overflow:visible}
+.art-caption{position:absolute;left:18px;right:18px;bottom:16px;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"mode name" "mode trait";align-items:center;gap:2px 12px;padding:12px 14px;border:3px solid var(--line);border-radius:14px;background:#fffdf4;box-shadow:5px 5px 0 var(--line)}
+.art-caption span{grid-area:mode;align-self:stretch;display:grid;place-items:center;padding:0 10px;border-radius:8px;background:var(--blue);color:#fff;font-family:var(--font-pixel);font-size:10px;font-weight:900}.art-caption strong{grid-area:name;font-size:22px}.art-caption small{grid-area:trait;color:var(--muted);font-weight:750}
+.onboarding-panel{min-width:0;overflow:hidden;background-color:#fffdf8;background-image:linear-gradient(#edf0e9 1px,transparent 1px),linear-gradient(90deg,#edf0e9 1px,transparent 1px);background-size:24px 24px}
+.onboarding-step{height:100%;overflow:auto;padding:clamp(26px,4vh,48px) clamp(30px,4vw,58px);scrollbar-width:thin}
+.onboarding-step h1{max-width:680px;margin:8px 0 12px;font-family:var(--font-display);font-size:clamp(42px,5vw,68px);line-height:.95;letter-spacing:-.055em}.onboarding-step>p{max-width:690px;margin:0 0 24px;color:#5c6d89;font-size:16px;line-height:1.55}
+.identity-form{max-width:610px;display:grid;gap:12px}.identity-form label,.design-grid>label{display:grid;gap:6px;font-size:12px;font-weight:900}.identity-form input,.design-grid input{width:100%;height:48px;border:3px solid var(--line);border-radius:10px;padding:0 13px;background:#fff;font-weight:800;outline:none}.identity-form input:focus,.design-grid input:focus{box-shadow:0 0 0 4px #65dce2}
+.primary-actions,.step-actions{display:flex;flex-wrap:wrap;gap:12px}.local-note{max-width:610px;margin-top:24px;padding:14px 16px;border:2px solid #8db0c5;border-radius:12px;background:#e7faff;color:#476078;font-size:13px;line-height:1.45}
+.design-step{padding-top:24px}.step-copy h1{font-size:clamp(31px,4vw,50px);margin-bottom:10px}.design-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;align-content:start}.field-wide{grid-column:1/-1}.design-grid fieldset{min-width:0;margin:0;padding:9px 11px 10px;border:2px solid #a7b9cf;border-radius:12px;background:rgba(255,255,255,.82)}.design-grid legend{padding:0 6px;font-size:11px;font-weight:950}.design-grid fieldset small{display:block;margin-top:5px;color:var(--muted);font-size:10px;line-height:1.35}.chip-row,.swatch-row{display:flex;flex-wrap:wrap;gap:6px}.chip-row button{min-height:32px;border:2px solid var(--line);border-radius:999px;padding:5px 10px;background:#fff;cursor:pointer;font-size:11px;font-weight:900}.chip-row button.active{background:var(--sun);box-shadow:2px 2px 0 var(--line)}.swatch-row button{width:30px;height:30px;border:3px solid var(--line);border-radius:50%;background:var(--swatch);cursor:pointer}.swatch-row button.active{outline:3px solid var(--sun);outline-offset:2px}.design-grid .step-actions{justify-content:space-between;margin-top:2px}
+.review-step{display:flex;flex-direction:column;justify-content:center}.review-step h1{font-size:clamp(40px,5vw,64px)}.review-intro{margin-bottom:14px!important}.review-list{display:grid;gap:0;margin:0;border:3px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;box-shadow:6px 6px 0 var(--shadow)}.review-list div{display:grid;grid-template-columns:minmax(120px,.42fr) minmax(0,1fr);gap:16px;padding:12px 16px;border-bottom:2px solid #dfe7ef}.review-list div:last-child{border-bottom:0}.review-list dt{color:#5d6b83;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.06em}.review-list dd{margin:0;min-width:0;overflow-wrap:anywhere;font-weight:900}.review-note{margin:16px 0!important;font-size:12px!important}.review-step .step-actions{justify-content:space-between}
+.initialization{position:absolute;inset:76px 0 0;z-index:20;display:grid;place-items:center;padding:20px;background:rgba(238,253,255,.95);backdrop-filter:blur(8px)}.initialization-card{width:min(760px,100%);display:grid;grid-template-columns:250px 1fr;align-items:center;gap:26px;padding:24px;border:4px solid var(--line);border-radius:22px;background:#fffdf6;box-shadow:10px 10px 0 var(--line)}.init-art{height:310px;overflow:hidden;border:3px solid var(--line);border-radius:16px;background:#c8f8e6}.init-art svg{width:100%;height:100%;animation:initPulse 1s steps(4) infinite alternate}.initialization-card h2{font-size:34px;margin:8px 0 18px}.initialization-card>div:last-child>span{font-family:var(--font-pixel);font-size:12px;font-weight:950;color:#2c5bd6}.progress-track{height:18px;overflow:hidden;border:3px solid var(--line);border-radius:999px;background:#e9eef4}.progress-track i{display:block;width:0;height:100%;background:linear-gradient(90deg,var(--aqua),var(--blue));transition:width .4s ease}.initialization-card small{display:block;margin-top:10px;color:var(--muted)}
+@keyframes initPulse{to{filter:brightness(1.12) saturate(1.15)}}
+
+/* Room selection */
+.room-select{min-height:100dvh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 10% 12%,#fff1a5,transparent 30%),radial-gradient(circle at 90% 88%,#80e5ed,transparent 36%),#effcff}.room-select-shell{width:min(1120px,100%);padding:25px;border:5px solid var(--line);border-radius:25px;background:#fffdf7;box-shadow:13px 13px 0 var(--shadow);text-align:center}.room-select-shell h1{margin:8px 0;font-family:var(--font-display);font-size:clamp(38px,5vw,62px);letter-spacing:-.05em}.room-select-shell header p{margin:0 auto 18px;color:var(--muted)}.room-choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:18px 0 24px}.room-card{min-width:0;padding:9px;border:3px solid var(--line);border-radius:16px;background:#fff;box-shadow:5px 5px 0 var(--shadow);cursor:pointer;text-align:left}.room-card.selected{background:#fff2b6;box-shadow:5px 5px 0 var(--line)}.room-card canvas{width:100%;display:block;border:2px solid var(--line);border-radius:9px;image-rendering:pixelated}.room-card span{display:grid;gap:3px;padding:8px 4px 2px}.room-card strong{font-size:15px}.room-card small{color:var(--muted);font-size:11px;line-height:1.35}
+
+/* Game shared */
+.game{height:100dvh;min-height:100dvh;display:grid;grid-template-rows:70px auto auto minmax(0,1fr) auto;background:#dff8f7;overflow:hidden}.game-header{grid-row:1;min-width:0;display:grid;grid-template-columns:minmax(210px,1fr) auto minmax(220px,1fr);align-items:center;gap:14px;padding:9px 16px;border-bottom:4px solid var(--line);background:#f3fcff}.header-left{display:flex;align-items:center;gap:12px}.icon-button{width:48px;height:48px;border:3px solid var(--line);border-radius:14px;background:var(--coral);color:#fff;box-shadow:3px 3px 0 var(--line);cursor:pointer;font-size:24px}.game-brand{display:grid}.game-brand strong{font-size:19px}.game-brand small{font-size:10px;color:var(--muted);font-weight:850}.game-status{display:flex;align-items:center;gap:8px}.game-status span,.game-status time{white-space:nowrap;padding:8px 11px;border:2px solid #cbd7e5;border-radius:10px;background:#fff;font-family:var(--font-pixel);font-size:12px;font-weight:900}.pal-portrait-button{justify-self:end;min-width:180px;height:50px;display:flex;align-items:center;gap:9px;padding:3px 12px 3px 4px;border:3px solid var(--line);border-radius:14px;background:#fff;box-shadow:3px 3px 0 var(--line);cursor:pointer;text-align:left}.pal-portrait-button>span:last-child{display:grid}.pal-portrait-button strong{font-size:14px}.pal-portrait-button small{max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#4b6991;font-size:9px;font-weight:850}.header-portrait{width:40px;height:40px;overflow:hidden;border-radius:10px;background:#bceee6}.header-portrait svg{width:100%;height:100%;transform:scale(1.85) translateY(12%)}
+.view-toolbar{grid-row:2;min-height:48px;display:flex;align-items:center;gap:14px;padding:7px 16px;border-bottom:2px solid #a7becd;background:#fffdf6}.view-switch{display:flex;padding:3px;border:2px solid var(--line);border-radius:12px;background:#e5edf7}.view-switch button{min-height:32px;border:0;border-radius:8px;padding:5px 13px;background:transparent;cursor:pointer;font-size:11px;font-weight:950}.view-switch button.active{background:var(--blue);color:#fff}.view-toolbar>span{flex:1;color:#60718b;font-size:11px;font-weight:750}.meta-toggle{border:2px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--sun);cursor:pointer;font-size:11px;font-weight:900}.meta-bar{grid-row:3;display:flex;align-items:center;gap:6px;overflow-x:auto;padding:6px 16px;border-bottom:2px solid var(--line);background:#112343;color:#fff}.meta-bar span{margin-right:8px;font-size:10px;font-weight:950;text-transform:uppercase}.meta-bar button{white-space:nowrap;border:1px solid #7fa6da;border-radius:7px;padding:5px 8px;background:#223d6d;color:#fff;cursor:pointer;font-size:10px;font-weight:850}
+
+/* Room View */
+.room-view{grid-row:4;position:relative;min-height:0;overflow:hidden;padding:12px;background:linear-gradient(#bdeef1,#e7fbf5)}.room-scene{position:relative;width:min(1380px,100%);height:100%;min-height:0;margin:auto;overflow:hidden;border:5px solid var(--line);border-radius:18px;background:#d8c3a2;box-shadow:8px 8px 0 var(--shadow)}.room-scene svg{width:100%;height:100%;display:block}.room-pal-hit{position:absolute;z-index:7;left:50%;top:55%;width:220px;height:390px;transform:translate(-50%,-50%);border:0;background:transparent;cursor:pointer}.room-action-ring{position:absolute;z-index:8;left:50%;top:51%;width:min(540px,72vw);height:390px;transform:translate(-50%,-50%);pointer-events:none}.room-action-ring button{position:absolute;min-width:100px;min-height:46px;border:3px solid var(--line);border-radius:999px;background:#fffdf4;box-shadow:4px 4px 0 var(--line);cursor:pointer;pointer-events:auto;font-weight:950}.room-action-ring button:nth-child(1){left:0;top:24%}.room-action-ring button:nth-child(2){right:0;top:24%}.room-action-ring button:nth-child(3){left:3%;bottom:18%}.room-action-ring button:nth-child(4){right:3%;bottom:18%}
+
+/* Explorer */
+.explorer-view{grid-row:4;min-height:0;padding:12px;background:linear-gradient(#bdeef1,#e7fbf5)}.explorer-frame{position:relative;width:min(1380px,100%);height:100%;min-height:0;margin:auto;overflow:hidden;border:5px solid var(--line);border-radius:18px;background:#111d38;box-shadow:8px 8px 0 var(--shadow)}#worldCanvas{width:100%;height:100%;min-height:0;display:block;image-rendering:pixelated;cursor:pointer;touch-action:manipulation}.explorer-objective{position:absolute;left:18px;bottom:18px;display:grid;gap:5px;max-width:260px;padding:12px 15px;border:3px solid var(--line);border-radius:12px;background:rgba(11,23,45,.9);color:#fff}.explorer-objective b{color:#68e28e;font-family:var(--font-pixel);font-size:12px}.explorer-objective span{font-size:12px}.mini-map{position:absolute;right:18px;bottom:18px;padding:9px;border:3px solid #8796ad;border-radius:14px;background:rgba(11,23,45,.88);color:#fff;text-align:center}.mini-map strong{font-family:var(--font-pixel);font-size:10px}.mini-map canvas{display:block;margin-top:5px;image-rendering:pixelated}.world-prompt{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;padding:8px 11px;border:3px solid var(--line);border-radius:999px;background:#fffdf4;box-shadow:4px 4px 0 var(--line);font-size:12px;font-weight:900}.world-prompt kbd{width:28px;height:28px;display:grid;place-items:center;border:2px solid var(--line);border-radius:7px;background:var(--sun)}.touch-controls{position:absolute;left:50%;bottom:12px;display:none;grid-template-columns:repeat(5,44px);gap:4px;transform:translateX(-50%)}.touch-controls button{width:44px;height:44px;border:2px solid var(--line);border-radius:10px;background:#fffdf5;font-weight:950}
+.game-dock{grid-row:5;position:relative;z-index:10;justify-self:center;width:min(830px,calc(100% - 24px));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin:0 auto 12px;overflow:hidden;border:3px solid var(--line);border-radius:15px;background:#fff;box-shadow:5px 5px 0 var(--shadow)}.game-dock button{min-width:0;min-height:52px;display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-right:2px solid #dfe7ef;background:#fff;cursor:pointer;font-size:16px}.game-dock button:last-child{border-right:0}.game-dock button span{font-size:11px;font-weight:900}.game-dock button:hover{background:#fff3b8}
+
+/* Dialogue and quick chat */
+.dialogue-mode,.quick-chat{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:18px}.dialogue-backdrop,.quick-chat-backdrop{position:absolute;inset:0;border:0;background:rgba(10,20,42,.42);backdrop-filter:blur(3px)}.dialogue-scene{position:relative;width:min(1120px,100%);height:min(700px,calc(100dvh - 36px));overflow:hidden;border:5px solid var(--line);border-radius:22px;background:#d7bea2;box-shadow:12px 12px 0 rgba(11,23,45,.35)}.dialogue-background{position:absolute;inset:0}.dialogue-background svg{width:100%;height:100%}.dialogue-art{position:absolute;left:3%;bottom:-12%;width:min(440px,44%);height:96%;filter:drop-shadow(9px 10px 0 rgba(15,28,55,.28))}.dialogue-art svg{width:100%;height:100%}.dialogue-box{position:absolute;right:4%;bottom:6%;width:min(610px,58%);padding:28px 24px 22px;border:4px solid var(--line);border-radius:18px;background:rgba(255,253,245,.97);box-shadow:7px 7px 0 var(--line)}.speaker-name{position:absolute;left:18px;top:-23px;min-width:130px;padding:8px 16px;border:3px solid var(--line);border-radius:10px 10px 5px 5px;background:var(--blue);color:#fff;font-weight:950}.dialogue-box p{margin:4px 0 18px;font-size:clamp(20px,2.2vw,30px);line-height:1.35}.dialogue-choices{display:grid;gap:7px}.dialogue-choices button{min-height:42px;border:2px solid var(--line);border-radius:9px;padding:8px 12px;background:#fff;text-align:left;cursor:pointer;font-weight:850}.dialogue-choices button:hover{background:var(--sun)}.dialogue-close{position:absolute;right:14px;top:14px;width:46px;height:46px;border:3px solid var(--line);border-radius:50%;background:#fff;color:var(--ink);cursor:pointer;font-size:24px;font-weight:900}.quick-chat-card{position:relative;width:min(720px,calc(100% - 20px));display:grid;grid-template-columns:180px 1fr auto;align-items:center;gap:18px;padding:18px;border:4px solid var(--line);border-radius:20px;background:#fffdf4;box-shadow:9px 9px 0 var(--line)}.quick-bust{height:160px;overflow:hidden;border:3px solid var(--line);border-radius:14px;background:#b8f4da}.quick-bust svg{width:100%;height:100%;transform:scale(1.12) translateY(6%)}.quick-chat-card>div:nth-child(2){display:grid;gap:7px}.quick-chat-card span{font-weight:950;color:#2d57ce}.quick-chat-card p{margin:0;font-size:20px;line-height:1.4}.quick-chat-card>button{align-self:start;width:40px;height:40px;border:2px solid var(--line);border-radius:50%;background:#fff;cursor:pointer;font-size:21px}
+
+/* Console */
+.console-mode{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:14px;background:radial-gradient(circle at 10% 10%,#fff2a5,transparent 28%),radial-gradient(circle at 90% 88%,#84e3eb,transparent 34%),#e9f9ff}.console-device{position:relative;width:min(920px,100%);height:min(720px,calc(100dvh - 28px));display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:10px;padding:22px 24px 18px;border:7px solid var(--line);border-radius:42px;background:linear-gradient(145deg,#91dbc8,#70c7b9 45%,#55a99e);box-shadow:16px 16px 0 rgba(16,26,51,.28),inset 0 0 0 5px rgba(255,255,255,.35)}.console-frame-label{align-self:center;justify-self:start;padding:8px 14px;border:3px solid var(--line);border-radius:999px;background:#d7eee4;font-family:var(--font-pixel);font-size:16px;font-weight:950;letter-spacing:.04em}.console-device>time{position:absolute;right:30px;top:27px;padding:7px 12px;border:3px solid var(--line);border-radius:10px;background:#f2fbf4;font-family:var(--font-pixel);font-size:20px;font-weight:950}.console-screen{position:relative;min-height:0;overflow:hidden;border:7px solid var(--line);border-radius:25px;background:#082b35;box-shadow:inset 0 0 35px rgba(82,255,209,.15)}.console-pattern{position:absolute;inset:-80px;background-image:radial-gradient(circle,#49e2c9 2px,transparent 3px),linear-gradient(90deg,transparent 48%,rgba(70,230,206,.16) 50%,transparent 52%);background-size:42px 42px,92px 92px;opacity:.48;animation:consoleScroll 18s linear infinite}.console-pal{position:absolute;z-index:2;left:50%;top:50%;width:min(310px,46%);aspect-ratio:1;transform:translate(-50%,-50%);border:0;background:transparent;cursor:pointer}.console-pal svg{width:100%;height:100%;filter:drop-shadow(0 12px 0 rgba(0,0,0,.22))}.console-glow{position:absolute;z-index:1;left:50%;top:50%;width:min(360px,54%);aspect-ratio:1;transform:translate(-50%,-50%);border:7px solid rgba(114,255,220,.9);border-radius:50%;box-shadow:0 0 0 12px rgba(41,223,210,.22),0 0 55px rgba(101,255,220,.75);animation:consoleGlow .85s ease-out}.console-actions{position:absolute;inset:0;z-index:4;pointer-events:none}.console-actions button{position:absolute;min-width:100px;min-height:47px;border:3px solid #71e5d4;border-radius:999px;padding:8px 13px;background:#102c42;color:#fff;box-shadow:0 0 0 3px rgba(16,26,51,.85);cursor:pointer;pointer-events:auto;font-size:14px;font-weight:950}.console-actions button:nth-child(1){left:7%;top:25%}.console-actions button:nth-child(2){left:10%;top:49%}.console-actions button:nth-child(3){right:7%;top:25%}.console-actions button:nth-child(4){right:10%;top:49%}.console-actions button:nth-child(5){left:50%;bottom:7%;transform:translateX(-50%)}.console-remark{position:absolute;z-index:5;left:50%;bottom:13px;max-width:70%;transform:translateX(-50%);padding:9px 14px;border:2px solid #5ee5cc;border-radius:10px;background:rgba(4,20,28,.91);color:#a7ffb9;cursor:pointer;font-family:var(--font-pixel);font-size:16px}.console-tool-screen{position:absolute;inset:0;z-index:8;padding:28px;background:#082b35;color:#e8fff8}.console-tool-screen>button{position:absolute;left:20px;bottom:20px;width:54px;height:54px;border:3px solid var(--line);border-radius:50%;background:var(--coral);color:#fff;cursor:pointer;font-weight:950}.console-tool-content{height:100%;display:grid;place-items:center}.console-tool-card{width:min(570px,100%);padding:28px;border:3px solid #63e2ce;border-radius:18px;background:#0e3442;text-align:center;box-shadow:0 0 30px rgba(72,229,207,.2)}.console-tool-card h2{margin:0 0 10px;font-size:36px}.console-tool-card p{font-size:18px;line-height:1.5}.console-balance{margin:14px 0;font-family:var(--font-pixel);font-size:56px;font-weight:950;color:#ffe478}.console-controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px}.console-mic{justify-self:start;width:78px;height:58px;border:4px solid var(--line);border-radius:18px;background:var(--sun);box-shadow:4px 4px 0 var(--line);cursor:pointer;font-weight:950}.ab-buttons{display:flex;gap:20px}.ab-buttons button{width:66px;height:66px;border:4px solid var(--line);border-radius:50%;box-shadow:4px 4px 0 var(--line);cursor:pointer;color:#fff;font-size:22px;font-weight:950}.ab-buttons button:first-child{background:#3285df}.ab-buttons button:last-child{background:#ef6758}.console-power{justify-self:end;width:70px;height:58px;border:4px solid var(--line);border-radius:17px;background:#d8eee4;box-shadow:4px 4px 0 var(--line);cursor:pointer;font-size:24px}@keyframes consoleScroll{to{transform:translate(84px,42px)}}@keyframes consoleGlow{0%{opacity:0;transform:translate(-50%,-50%) scale(.72)}55%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.2)}}
+
+/* App panel */
+.app-panel{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:15px;background:rgba(10,20,42,.45);backdrop-filter:blur(3px)}.panel-backdrop{position:absolute;inset:0;border:0;background:transparent;cursor:default}.panel-shell{position:relative;z-index:1;width:min(840px,calc(100% - 24px));max-height:calc(100dvh - 30px);overflow:hidden;border:4px solid var(--line);border-radius:20px;background:#fffdf6;box-shadow:10px 10px 0 rgba(16,26,51,.3)}.panel-shell header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:3px solid var(--line);background:#edfaff}.panel-shell header>div{display:grid}.panel-shell header span{font-family:var(--font-pixel);font-size:10px;color:#315edc;font-weight:950}.panel-shell h2{margin:2px 0 0;font-size:28px}.panel-shell header button{width:42px;height:42px;border:3px solid var(--line);border-radius:50%;background:#fff;cursor:pointer;font-size:22px}.panel-content{max-height:70dvh;overflow:auto;padding:22px}.panel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.panel-card{padding:16px;border:2px solid #b8c8d8;border-radius:13px;background:#fff}.panel-card h3{margin:0 0 7px}.panel-card p{margin:0;color:var(--muted);line-height:1.45}.toast{position:fixed;z-index:120;left:50%;bottom:86px;transform:translateX(-50%);padding:11px 16px;border:3px solid var(--line);border-radius:999px;background:#fffdf4;box-shadow:4px 4px 0 var(--line);font-weight:900;pointer-events:none}
+
+@media (max-width:900px){
+  .onboarding-shell{width:100%;height:auto;min-height:100dvh;border:0;border-radius:0;box-shadow:none;overflow:visible}.onboarding{padding:0}.onboarding-header{position:sticky;top:0;z-index:10;height:auto;min-height:68px;padding:9px 12px}.brand small{display:none}.stepper li{min-width:34px;grid-template-columns:1fr;padding:5px}.stepper li span{display:none}.onboarding-body{height:auto;display:flex;flex-direction:column}.art-card{height:44dvh;min-height:320px;border-right:0;border-bottom:4px solid var(--line)}.art-viewport{inset:10px 12px 78px}.full-art-preview{width:min(76%,360px)}.art-caption{bottom:10px}.onboarding-panel{overflow:visible}.onboarding-step{height:auto;min-height:56dvh;padding:24px 18px 34px}.onboarding-step h1{font-size:42px}.design-grid{grid-template-columns:1fr 1fr}.review-list div{grid-template-columns:1fr;gap:3px}.initialization{position:fixed;inset:0}.initialization-card{grid-template-columns:1fr;max-height:calc(100dvh - 30px);overflow:auto}.init-art{height:260px}.room-choice-grid{grid-template-columns:1fr}.game{grid-template-rows:auto auto auto minmax(0,1fr) auto}.game-header{grid-template-columns:1fr auto;padding:8px}.game-status{display:none}.pal-portrait-button{min-width:145px}.view-toolbar{padding:6px 8px}.view-toolbar>span{display:none}.room-view,.explorer-view{padding:7px}.room-scene,.explorer-frame,#worldCanvas{min-height:0}.game-dock{grid-template-columns:repeat(5,minmax(70px,1fr));overflow-x:auto}.game-dock button{min-width:74px;display:grid;place-items:center;gap:1px}.game-dock button span{font-size:9px}.touch-controls{display:grid}.explorer-objective{left:9px;top:9px;bottom:auto}.mini-map{right:9px;bottom:68px;transform:scale(.8);transform-origin:bottom right}.world-prompt{bottom:69px}.dialogue-scene{height:calc(100dvh - 16px)}.dialogue-art{left:-5%;width:62%;height:77%;bottom:26%}.dialogue-box{left:3%;right:3%;bottom:3%;width:auto}.dialogue-box p{font-size:18px}.quick-chat-card{grid-template-columns:110px 1fr auto}.quick-bust{height:110px}.console-device{height:calc(100dvh - 16px);padding:16px 14px 12px;border-radius:28px}.console-frame-label{font-size:11px}.console-device>time{top:20px;right:20px;font-size:15px}.console-actions button{min-width:76px;min-height:40px;font-size:11px}.console-actions button:nth-child(1){left:3%}.console-actions button:nth-child(2){left:5%}.console-actions button:nth-child(3){right:3%}.console-actions button:nth-child(4){right:5%}.console-remark{max-width:82%;font-size:12px}.console-controls{gap:8px}.console-mic{width:62px}.ab-buttons{gap:8px}.ab-buttons button{width:56px;height:56px}.console-power{width:58px}.panel-grid{grid-template-columns:1fr}
+}
+@media (min-width:901px) and (max-height:820px){
+  .onboarding-shell{height:calc(100dvh - 16px);min-height:0}.onboarding{padding:8px}.onboarding-header{height:60px;padding:7px 14px}.onboarding-body{height:calc(100% - 60px)}.onboarding-step{padding:16px 24px}.onboarding-step h1{font-size:38px;margin:5px 0 8px}.onboarding-step>p{margin-bottom:12px;font-size:13px}.design-grid{gap:6px 10px}.design-grid fieldset{padding:6px 8px}.chip-row button{min-height:27px;padding:3px 8px;font-size:10px}.swatch-row button{width:25px;height:25px}.identity-form input,.design-grid input{height:40px}.button{min-height:38px;padding:7px 13px}.local-note{margin-top:12px;padding:10px}.review-list div{padding:8px 12px}.art-viewport{inset:10px 10px 76px}.art-caption{bottom:10px;padding:8px 10px}.full-art-preview{height:120%}.room-scene,.explorer-frame,#worldCanvas{min-height:0}.console-device{height:calc(100dvh - 16px)}
+}
+@media (max-width:560px){
+  .design-grid{grid-template-columns:1fr}.field-wide{grid-column:1}.art-card{height:39dvh;min-height:275px}.art-caption{grid-template-columns:auto 1fr}.art-caption strong{font-size:17px}.art-caption small{font-size:10px}.onboarding-step{min-height:61dvh}.room-select{padding:0}.room-select-shell{min-height:100dvh;border:0;border-radius:0;box-shadow:none;padding:18px 12px}.room-card{display:grid;grid-template-columns:116px 1fr;align-items:center}.room-card span{padding-left:10px}.game-header{grid-template-columns:1fr auto}.game-brand small{display:none}.pal-portrait-button{min-width:0;width:54px;padding:3px}.pal-portrait-button>span:last-child{display:none}.view-switch button{padding:5px 8px;font-size:10px}.room-action-ring{width:92vw}.room-action-ring button{min-width:84px;font-size:11px}.room-action-ring button:nth-child(1){left:0}.room-action-ring button:nth-child(2){right:0}.room-pal-hit{width:150px;height:280px}.quick-chat-card{grid-template-columns:84px 1fr auto;padding:12px;gap:10px}.quick-bust{height:84px}.quick-chat-card p{font-size:15px}.dialogue-art{width:74%;left:-14%}.console-pal{width:58%}.console-actions button:nth-child(1){top:18%}.console-actions button:nth-child(3){top:18%}.console-actions button:nth-child(2){top:60%}.console-actions button:nth-child(4){top:60%}.console-actions button:nth-child(5){bottom:4%}
+}
+
+</style>
+</head>
+<body>
+  <main id="app" class="app" data-screen="onboarding">
+    <section id="onboarding" class="onboarding" aria-label="PAL onboarding">
+      <div class="onboarding-shell">
+        <header class="onboarding-header">
+          <a class="brand" href="#" aria-label="PAL home">
+            <span class="brand-mark">PAL</span>
+            <span><strong>PAL</strong><small>Personal Assistant Learner</small></span>
+          </a>
+          <ol class="stepper" aria-label="Onboarding progress">
+            <li class="active" data-step-dot="1"><b>1</b><span>Campus ID</span></li>
+            <li data-step-dot="2"><b>2</b><span>Design PAL</span></li>
+            <li data-step-dot="3"><b>3</b><span>Review</span></li>
+          </ol>
+        </header>
+
+        <div id="onboardingBody" class="onboarding-body">
+          <aside id="artCard" class="art-card" aria-label="Interactive PAL artwork">
+            <div class="art-grid"></div>
+            <div id="artViewport" class="art-viewport" tabindex="0" aria-label="Grab and drag to inspect the PAL artwork">
+              <div id="fullArtPreview" class="full-art-preview"></div>
+              <span class="drag-hint">✋ Drag to inspect</span>
+            </div>
+            <div class="art-caption">
+              <span id="artModeLabel">PAL CONCEPT ART</span>
+              <strong id="previewName">Mika</strong>
+              <small id="previewTrait">Curious starting disposition</small>
+            </div>
+          </aside>
+
+          <section class="onboarding-panel">
+            <section class="onboarding-step" data-step="1">
+              <span class="eyebrow">Step 1 of 3 · Campus identity</span>
+              <h1>Create your PAL.</h1>
+              <p>A PAL is a persistent digital learner that lives on your device and helps you learn, plan, and reflect.</p>
+              <form id="identityForm" class="identity-form" novalidate>
+                <label>University email
+                  <input id="studentEmail" type="email" autocomplete="email" placeholder="student@university.edu" required>
+                </label>
+                <p id="identityError" class="form-error" role="alert"></p>
+                <div class="primary-actions">
+                  <button id="sampleProfile" class="button primary" type="button">Start sample profile</button>
+                  <button class="button secondary" type="submit">Use university email</button>
+                </div>
+              </form>
+              <div class="local-note"><b>Local prototype.</b> No university account, wallet, passkey, or cloud profile is created.</div>
+            </section>
+
+            <section class="onboarding-step design-step" data-step="2" hidden>
+              <div class="step-copy">
+                <span class="eyebrow">Step 2 of 3 · Design PAL</span>
+                <h1>Give your PAL a starting form.</h1>
+              </div>
+              <form id="designForm" class="design-grid" novalidate>
+                <label class="field-wide">PAL name
+                  <input id="palName" value="Mika" maxlength="18" required>
+                </label>
+
+                <fieldset class="field-wide compact-fieldset">
+                  <legend>Starting disposition</legend>
+                  <div id="dispositionChoices" class="chip-row"></div>
+                  <small id="dispositionHelp">Curious PALs ask follow-up questions and notice patterns.</small>
+                </fieldset>
+
+                <fieldset>
+                  <legend>Skin tone</legend>
+                  <div id="skinChoices" class="swatch-row"></div>
+                </fieldset>
+                <fieldset>
+                  <legend>Eye color</legend>
+                  <div id="eyeChoices" class="swatch-row"></div>
+                </fieldset>
+                <fieldset class="field-wide compact-fieldset">
+                  <legend>Hair</legend>
+                  <div id="hairChoices" class="chip-row"></div>
+                </fieldset>
+                <fieldset>
+                  <legend>Hair color</legend>
+                  <div id="hairColorChoices" class="swatch-row"></div>
+                </fieldset>
+                <fieldset class="field-wide compact-fieldset">
+                  <legend>Starter outfit</legend>
+                  <div id="outfitChoices" class="chip-row"></div>
+                </fieldset>
+
+                <p id="designError" class="form-error field-wide" role="alert"></p>
+                <div class="step-actions field-wide">
+                  <button id="designBack" class="button secondary" type="button">Back</button>
+                  <button class="button primary" type="submit">Continue to review</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="onboarding-step review-step" data-step="3" hidden>
+              <span class="eyebrow">Step 3 of 3 · Final review</span>
+              <h1>Ready to initialize.</h1>
+              <p class="review-intro">Inspect the single PAL card, then confirm the local profile below.</p>
+              <dl class="review-list">
+                <div><dt>PAL</dt><dd id="reviewName">Mika</dd></div>
+                <div><dt>Disposition</dt><dd id="reviewDisposition">Curious</dd></div>
+                <div><dt>Student</dt><dd id="reviewEmail">student@university.edu</dd></div>
+                <div><dt>Campus</dt><dd id="reviewCampus">University</dd></div>
+                <div><dt>Local identity</dt><dd id="reviewIdentity">PAL-000000</dd></div>
+              </dl>
+              <p class="review-note">Speech habits, humor, skills, clothing preferences, and social relationships may emerge later through shared experiences.</p>
+              <div class="step-actions">
+                <button id="reviewBack" class="button secondary" type="button">Back</button>
+                <button id="initializePal" class="button primary" type="button">Initialize PAL</button>
+              </div>
+            </section>
+          </section>
+        </div>
+
+        <section id="initialization" class="initialization" hidden aria-live="polite">
+          <div class="initialization-card">
+            <div id="initArt" class="init-art"></div>
+            <div>
+              <span>PAL INITIALIZATION</span>
+              <h2 id="initStatus">Building local identity…</h2>
+              <div class="progress-track"><i id="initProgress"></i></div>
+              <small>No cloud account or real wallet is created.</small>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="roomSelect" class="room-select" hidden aria-label="Choose dorm room">
+      <div class="room-select-shell">
+        <header>
+          <span class="eyebrow">First move-in</span>
+          <h1>Choose our starting room.</h1>
+          <p id="roomIntroLine">I am ready when you are. Pick the room that feels most like us.</p>
+        </header>
+        <div class="room-choice-grid">
+          <button class="room-card selected" type="button" data-room="sunlit">
+            <canvas width="264" height="156" data-room-preview="sunlit"></canvas>
+            <span><strong>Sunlit Campus</strong><small>Warm wood, bed on the left, desk below the window.</small></span>
+          </button>
+          <button class="room-card" type="button" data-room="tech">
+            <canvas width="264" height="156" data-room-preview="tech"></canvas>
+            <span><strong>Campus Tech</strong><small>Cool surfaces, compact workstation, equipment shelf.</small></span>
+          </button>
+          <button class="room-card" type="button" data-room="creative">
+            <canvas width="264" height="156" data-room-preview="creative"></canvas>
+            <span><strong>Cozy Creative</strong><small>Reading corner, art board, softer furniture.</small></span>
+          </button>
+        </div>
+        <button id="enterGame" class="button primary large" type="button">Enter Room View</button>
+      </div>
+    </section>
+
+    <section id="game" class="game" hidden aria-label="PAL game">
+      <header class="game-header">
+        <div class="header-left">
+          <button id="consoleButton" class="icon-button power" type="button" aria-label="Open PAL Console" title="Open PAL Console">⏻</button>
+          <div class="game-brand"><strong>PAL</strong><small id="worldLocation">Dorm 1A · Day</small></div>
+        </div>
+
+        <div class="game-status">
+          <span>◉ <b id="walletBalance">60</b> SHARK</span>
+          <time id="gameDate">Tue, Aug 4</time>
+          <time id="gameTime">10:01 PM</time>
+        </div>
+
+        <button id="palPortraitButton" class="pal-portrait-button" type="button" aria-label="Open PAL quick chat">
+          <span id="headerPortrait" class="header-portrait"></span>
+          <span><strong id="headerPalName">Mika</strong><small id="headerPalState">Relaxing in the room</small></span>
+        </button>
+      </header>
+
+      <div class="view-toolbar" aria-label="Dorm view controls">
+        <div class="view-switch" role="group" aria-label="Switch dorm view">
+          <button id="roomViewButton" class="active" type="button">Room View</button>
+          <button id="explorerViewButton" type="button">Explorer Mode</button>
+        </div>
+        <span id="viewHint">A close, composed view of the same room state.</span>
+        <button id="metaButton" class="meta-toggle" type="button">Demo tools</button>
+      </div>
+
+      <div id="metaBar" class="meta-bar" hidden>
+        <span>Demo tools</span>
+        <button type="button" data-time="day">Day</button>
+        <button type="button" data-time="sunset">Sunset</button>
+        <button type="button" data-time="night">Night</button>
+        <button type="button" data-activity="center">Center</button>
+        <button type="button" data-activity="desk">Desk</button>
+        <button type="button" data-activity="bed">Bed</button>
+        <button type="button" data-activity="bookshelf">Bookshelf</button>
+        <button type="button" data-meta-close>Close</button>
+      </div>
+
+      <section id="roomView" class="room-view" aria-label="Room View">
+        <div id="roomScene" class="room-scene"></div>
+        <div id="roomActionRing" class="room-action-ring" hidden>
+          <button type="button" data-room-action="talk">Talk</button>
+          <button type="button" data-room-action="check">Check in</button>
+          <button type="button" data-room-action="plan">Plan</button>
+          <button type="button" data-room-action="react">React</button>
+        </div>
+        <button id="roomPalHit" class="room-pal-hit" type="button" aria-label="Select PAL"></button>
+      </section>
+
+      <section id="explorerView" class="explorer-view" hidden aria-label="Explorer Mode">
+        <div class="explorer-frame">
+          <canvas id="worldCanvas" width="960" height="540" aria-label="Walkable three-quarter dorm room"></canvas>
+          <div class="explorer-objective"><b>OBJECTIVE</b><span>Explore the room or return to Room View.</span></div>
+          <div class="mini-map"><strong>DORM</strong><canvas id="miniMap" width="136" height="92"></canvas></div>
+          <button id="worldPrompt" class="world-prompt" type="button" hidden><kbd>E</kbd><span id="worldPromptText">Interact</span></button>
+          <div class="touch-controls" aria-label="Explorer touch controls">
+            <button data-move="up">▲</button>
+            <button data-move="left">◀</button>
+            <button data-interact>●</button>
+            <button data-move="right">▶</button>
+            <button data-move="down">▼</button>
+          </div>
+        </div>
+      </section>
+
+      <nav class="game-dock" aria-label="Game applications">
+        <button type="button" data-panel="agenda">▣<span>Agenda</span></button>
+        <button type="button" data-panel="journal">▤<span>Journal</span></button>
+        <button type="button" data-panel="collection">☆<span>Collection</span></button>
+        <button type="button" data-panel="customize">♙<span>Customize</span></button>
+        <button type="button" data-panel="campusweb">▦<span>Campus Web</span></button>
+      </nav>
+    </section>
+
+    <section id="dialogueMode" class="dialogue-mode" hidden aria-label="Dialogue Mode">
+      <button id="dialogueBackdrop" class="dialogue-backdrop" type="button" aria-label="Close dialogue"></button>
+      <div class="dialogue-scene">
+        <div id="dialogueBackground" class="dialogue-background"></div>
+        <div id="dialogueArt" class="dialogue-art"></div>
+        <div class="dialogue-box">
+          <span id="dialogueName" class="speaker-name">Mika</span>
+          <p id="dialogueText">Hey. I am glad you are here.</p>
+          <div class="dialogue-choices">
+            <button type="button" data-dialogue-choice="agenda">Let’s check today’s agenda.</button>
+            <button type="button" data-dialogue-choice="room">What do you think of the room?</button>
+            <button type="button" data-dialogue-choice="later">Let’s talk later.</button>
+          </div>
+        </div>
+        <button id="dialogueClose" class="dialogue-close" type="button" aria-label="Close dialogue">×</button>
+      </div>
+    </section>
+
+    <section id="quickChat" class="quick-chat" hidden aria-label="Quick chat">
+      <button class="quick-chat-backdrop" type="button" data-quick-close aria-label="Close quick chat"></button>
+      <div class="quick-chat-card">
+        <div id="quickBust" class="quick-bust"></div>
+        <div><span id="quickSpeaker">Mika</span><p id="quickText">I am here. What should we look at?</p></div>
+        <button type="button" data-quick-close aria-label="Close">×</button>
+      </div>
+    </section>
+
+    <section id="consoleMode" class="console-mode" hidden aria-label="PAL Console">
+      <div class="console-device">
+        <div class="console-frame-label">PAL · DIGITAL FORM</div>
+        <time id="consoleTime">10:01 PM</time>
+        <div class="console-screen">
+          <div class="console-pattern"></div>
+          <button id="consolePal" class="console-pal" type="button" aria-label="Select PAL Console form"></button>
+          <div id="consoleGlow" class="console-glow" hidden></div>
+          <div id="consoleActions" class="console-actions" hidden>
+            <button type="button" data-console-tool="talk">Talk</button>
+            <button type="button" data-console-tool="brief">Brief</button>
+            <button type="button" data-console-tool="wallet">Wallet</button>
+            <button type="button" data-console-tool="calc">Calc</button>
+            <button type="button" data-console-tool="focus">Focus</button>
+          </div>
+          <button id="consoleRemark" class="console-remark" type="button">I saved your place in the dorm.</button>
+          <section id="consoleToolScreen" class="console-tool-screen" hidden>
+            <button id="consoleBack" type="button" aria-label="Back to Console home">B</button>
+            <div id="consoleToolContent" class="console-tool-content"></div>
+          </section>
+        </div>
+        <div class="console-controls">
+          <button id="consoleMic" class="console-mic" type="button">MIC</button>
+          <div class="ab-buttons"><button id="consoleA" type="button">A</button><button id="consoleB" type="button">B</button></div>
+          <button id="consolePower" class="console-power" type="button" aria-label="Return to Room View">⏻</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="appPanel" class="app-panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle" hidden>
+      <button class="panel-backdrop" type="button" data-panel-close aria-label="Close panel"></button>
+      <div class="panel-shell">
+        <header><div><span id="panelKicker">PAL</span><h2 id="panelTitle">Agenda</h2></div><button type="button" data-panel-close aria-label="Close panel">×</button></header>
+        <div id="panelContent" class="panel-content"></div>
+      </div>
+    </section>
+
+    <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+  </main>
+
+  <script>
+(() => {
+  'use strict';
+
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const capitalize = value => value.charAt(0).toUpperCase() + value.slice(1);
+  const escapeHtml = value => String(value).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+
+  const palettes = {
+    skin: ['#f7d4b5','#e8b18b','#c98561','#9b6045','#704437','#432e2c'],
+    eyes: ['#2f62ad','#2f8c79','#7651a8','#8d5c35','#27314b','#b34f5d'],
+    hair: ['#2a2340','#4f2d27','#9a562e','#d5ad4a','#5a456f','#24262b']
+  };
+
+  const dispositions = {
+    curious: 'Curious PALs ask follow-up questions and notice patterns.',
+    steady: 'Steady PALs prefer clear routines, calm plans, and follow-through.',
+    playful: 'Playful PALs develop jokes, wordplay, and surprising reactions.',
+    bold: 'Bold PALs propose experiments and encourage decisive action.',
+    reflective: 'Reflective PALs connect today with earlier memories and themes.'
+  };
+
+  const outfitColors = {
+    coast: ['#315edc','#f7f4e9','#142a55'],
+    hoodie: ['#3d8f77','#e8fff5','#17365b'],
+    cardigan: ['#a95f82','#fff1f6','#5a3046'],
+    varsity: ['#ec6b5e','#fff0c8','#17305a'],
+    utility: ['#566984','#d6e5ed','#1c2e49']
+  };
+
+  const state = {
+    step: 1,
+    email: '',
+    campus: 'University',
+    identity: 'PAL-000000',
+    room: 'sunlit',
+    time: 'day',
+    view: 'room',
+    wallet: 60,
+    pal: {
+      name: 'Mika',
+      disposition: 'curious',
+      skin: 1,
+      eyes: 0,
+      hair: 'swept',
+      hairColor: 1,
+      outfit: 'coast'
+    },
+    player: { x: 8, y: 7, dir: 'down', step: 0 },
+    activity: 'center',
+    actionRing: false,
+    consoleSelected: false,
+    consoleTool: null,
+    remarkTimer: null
+  };
+
+  const roomThemes = {
+    sunlit: { wall:'#d9bd95', wall2:'#c79f72', floor:'#b67540', rug:'#344f83', bedding:'#325385', accent:'#ffd261', sky:'#83d9ed', label:'Sunlit Campus' },
+    tech: { wall:'#a8bfd2', wall2:'#748da5', floor:'#526a80', rug:'#2c4675', bedding:'#3a5f91', accent:'#62e2dc', sky:'#7cc5e9', label:'Campus Tech' },
+    creative: { wall:'#d8a8a6', wall2:'#b97882', floor:'#b47555', rug:'#76518f', bedding:'#8c5f87', accent:'#ffd360', sky:'#98dfea', label:'Cozy Creative' }
+  };
+
+  function hashText(text) {
+    let h = 2166136261;
+    for (const ch of text) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+    return Math.abs(h >>> 0).toString(16).toUpperCase().padStart(8, '0');
+  }
+
+  function profileFromEmail(email) {
+    const domain = email.split('@')[1] || 'university.edu';
+    let campus = domain.split('.')[0].replace(/[-_]/g,' ');
+    if (/csulb|student\.csulb/i.test(domain)) campus = 'California State University, Long Beach';
+    else campus = campus.replace(/\b\w/g, c => c.toUpperCase()) || 'University';
+    return { campus, identity: `PAL-${hashText(email).slice(0,6)}` };
+  }
+
+  function hairMarkup(style, color, line = '#101a33') {
+    const common = `fill="${color}" stroke="${line}" stroke-width="7" stroke-linejoin="round"`;
+    const paths = {
+      swept: `<path d="M80 137Q72 62 151 45Q224 52 234 132L209 105L188 119L162 86L132 119L105 101L83 141Z" ${common}/><path d="M93 91Q128 49 195 60Q144 69 112 126Z" fill="#fff" opacity=".08"/>`,
+      bob: `<path d="M78 139Q70 62 153 44Q231 56 234 142L224 214L201 202L197 117Q171 88 143 98Q111 103 105 141L102 211L78 191Z" ${common}/>`,
+      curls: `<g ${common}>${[[91,91,29],[123,60,29],[159,51,31],[196,65,30],[222,97,29],[94,129,27],[220,135,27]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>`,
+      short: `<path d="M83 132Q80 71 150 46Q210 51 229 121L208 104L188 115L164 89L137 114L112 101L91 135Z" ${common}/>`,
+      long: `<path d="M78 137Q69 60 151 43Q232 54 237 143L228 268L201 244L199 116Q171 88 142 98Q109 102 104 143L103 264L74 241Z" ${common}/>`
+    };
+    return paths[style] || paths.swept;
+  }
+
+  function characterMarkup({ expression='smile', pose='standing' } = {}) {
+    const pal = state.pal;
+    const skin = palettes.skin[pal.skin];
+    const eyes = palettes.eyes[pal.eyes];
+    const hair = palettes.hair[pal.hairColor];
+    const [main, trim, dark] = outfitColors[pal.outfit] || outfitColors.coast;
+    const mouth = expression === 'smile'
+      ? '<path d="M139 194Q160 211 181 194" fill="none" stroke="#713f39" stroke-width="6" stroke-linecap="round"/>'
+      : expression === 'talk'
+        ? '<ellipse cx="160" cy="199" rx="14" ry="10" fill="#7b3843"/><path d="M150 195h20" stroke="#fff" stroke-width="4"/>'
+        : '<path d="M146 199h28" stroke="#713f39" stroke-width="6" stroke-linecap="round"/>';
+
+    const sitting = pose === 'sitting';
+    const legLeft = sitting
+      ? `<path d="M132 369Q113 400 102 440" stroke="#101a33" stroke-width="26" stroke-linecap="round"/><path d="M132 369Q113 400 102 440" stroke="#2f4c78" stroke-width="15" stroke-linecap="round"/><path d="M85 433Q104 426 127 441L123 463H79Q75 446 85 433Z" fill="${trim}" stroke="#101a33" stroke-width="7" stroke-linejoin="round"/>`
+      : `<path d="M132 371Q128 420 122 469" stroke="#101a33" stroke-width="28" stroke-linecap="round"/><path d="M132 371Q128 420 122 469" stroke="#2f4c78" stroke-width="17" stroke-linecap="round"/><path d="M104 462Q124 454 151 471L146 493H91Q87 476 104 462Z" fill="${trim}" stroke="#101a33" stroke-width="7" stroke-linejoin="round"/>`;
+    const legRight = sitting
+      ? `<path d="M188 369Q207 400 218 440" stroke="#101a33" stroke-width="26" stroke-linecap="round"/><path d="M188 369Q207 400 218 440" stroke="#2f4c78" stroke-width="15" stroke-linecap="round"/><path d="M193 441Q216 426 235 433Q245 446 241 463H197Z" fill="${trim}" stroke="#101a33" stroke-width="7" stroke-linejoin="round"/>`
+      : `<path d="M188 371Q192 420 198 469" stroke="#101a33" stroke-width="28" stroke-linecap="round"/><path d="M188 371Q192 420 198 469" stroke="#2f4c78" stroke-width="17" stroke-linecap="round"/><path d="M169 471Q196 454 216 462Q233 476 229 493H174Z" fill="${trim}" stroke="#101a33" stroke-width="7" stroke-linejoin="round"/>`;
+
+    return `
+      <ellipse cx="160" cy="503" rx="78" ry="12" fill="#101a33" opacity=".11"/>
+      ${legLeft}${legRight}
+      <path d="M113 335Q160 350 207 335L199 389Q160 402 121 389Z" fill="${dark}" stroke="#101a33" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M118 235Q96 252 87 292L77 352" fill="none" stroke="#101a33" stroke-width="24" stroke-linecap="round"/>
+      <path d="M118 235Q96 252 87 292L77 352" fill="none" stroke="${main}" stroke-width="14" stroke-linecap="round"/>
+      <ellipse cx="75" cy="363" rx="13" ry="16" fill="${skin}" stroke="#101a33" stroke-width="6"/>
+      <path d="M202 235Q224 252 233 292L243 352" fill="none" stroke="#101a33" stroke-width="24" stroke-linecap="round"/>
+      <path d="M202 235Q224 252 233 292L243 352" fill="none" stroke="${main}" stroke-width="14" stroke-linecap="round"/>
+      <ellipse cx="245" cy="363" rx="13" ry="16" fill="${skin}" stroke="#101a33" stroke-width="6"/>
+      <path d="M118 226Q160 207 202 226Q211 280 207 338Q160 357 113 338Q109 280 118 226Z" fill="${main}" stroke="#101a33" stroke-width="8" stroke-linejoin="round"/>
+      <path d="M127 224L160 258L193 224L205 245L180 273L160 261L140 273L115 245Z" fill="${trim}" stroke="#101a33" stroke-width="6"/>
+      <path d="M160 261v85" stroke="${dark}" stroke-width="4" opacity=".75"/>
+      <path d="M139 197v34Q160 247 181 231V197Z" fill="${skin}" stroke="#101a33" stroke-width="6"/>
+      <path d="M96 112Q99 61 160 54Q221 61 224 112L220 166Q215 218 160 231Q105 218 100 166Z" fill="${skin}" stroke="#101a33" stroke-width="8"/>
+      <path d="M100 131Q82 132 83 154Q84 176 104 175M220 131Q238 132 237 154Q236 176 216 175" fill="${skin}" stroke="#101a33" stroke-width="6"/>
+      ${hairMarkup(pal.hair, hair)}
+      <path d="M116 139Q132 130 148 139M172 139Q188 130 204 139" fill="none" stroke="#342934" stroke-width="5" stroke-linecap="round"/>
+      <path d="M114 159Q132 146 150 159Q132 181 114 159Z" fill="#fffdf5" stroke="#101a33" stroke-width="4"/>
+      <path d="M170 159Q188 146 206 159Q188 181 170 159Z" fill="#fffdf5" stroke="#101a33" stroke-width="4"/>
+      <ellipse cx="134" cy="160" rx="7" ry="10" fill="${eyes}"/><ellipse cx="186" cy="160" rx="7" ry="10" fill="${eyes}"/>
+      <circle cx="136" cy="156" r="2.3" fill="#fff"/><circle cx="188" cy="156" r="2.3" fill="#fff"/>
+      <path d="M160 166v17l-7 4" fill="none" stroke="#9b6a59" stroke-width="4" stroke-linecap="round"/>
+      ${mouth}
+      <ellipse cx="117" cy="192" rx="11" ry="4" fill="#dc7773" opacity=".28"/><ellipse cx="203" cy="192" rx="11" ry="4" fill="#dc7773" opacity=".28"/>
+      <path d="M126 307h68" stroke="${trim}" stroke-width="7" opacity=".65"/>`;
+  }
+
+  function characterSvg({ crop='full', expression='smile', pose='standing' } = {}) {
+    const viewBox = crop === 'bust' ? '58 55 204 205' : crop === 'waist' ? '40 40 240 355' : '20 35 280 485';
+    return `<svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(state.pal.name)} character artwork">${characterMarkup({expression,pose})}</svg>`;
+  }
+
+  function consoleFormSvg() {
+    const hair = palettes.hair[state.pal.hairColor];
+    const [main] = outfitColors[state.pal.outfit] || outfitColors.coast;
+    return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(state.pal.name)} compact digital form">
+      <ellipse cx="150" cy="246" rx="80" ry="18" fill="#03161c" opacity=".45"/>
+      <path d="M93 91Q98 54 145 49Q193 53 207 91L187 79L169 88L147 66L124 87L104 77Z" fill="${hair}" stroke="#071b27" stroke-width="8"/>
+      <rect x="73" y="78" width="154" height="137" rx="34" fill="#f4f2dd" stroke="#071b27" stroke-width="10"/>
+      <rect x="91" y="99" width="118" height="84" rx="18" fill="#062d38" stroke="#071b27" stroke-width="8"/>
+      <rect x="66" y="119" width="22" height="54" rx="8" fill="${main}" stroke="#071b27" stroke-width="7"/>
+      <rect x="212" y="119" width="22" height="54" rx="8" fill="${main}" stroke="#071b27" stroke-width="7"/>
+      <circle cx="126" cy="137" r="8" fill="#6df5d4"/><circle cx="174" cy="137" r="8" fill="#6df5d4"/>
+      <path d="M125 158Q150 180 175 158" fill="none" stroke="#6df5d4" stroke-width="7" stroke-linecap="round"/>
+      <path d="M106 211v24M194 211v24" stroke="#071b27" stroke-width="16" stroke-linecap="round"/><path d="M106 211v24M194 211v24" stroke="${main}" stroke-width="9" stroke-linecap="round"/>
+      <path d="M88 236h38M174 236h38" stroke="#071b27" stroke-width="14" stroke-linecap="round"/>
+      <circle cx="222" cy="94" r="10" fill="#62e2d1" stroke="#071b27" stroke-width="5"/>
+    </svg>`;
+  }
+
+  function renderCharacterEverywhere() {
+    $('#fullArtPreview').innerHTML = characterSvg({crop:'full',expression:'smile'});
+    $('#initArt').innerHTML = characterSvg({crop:'full',expression:'smile'});
+    $('#headerPortrait').innerHTML = characterSvg({crop:'bust',expression:'smile'});
+    $('#dialogueArt').innerHTML = characterSvg({crop:'waist',expression:'smile'});
+    $('#quickBust').innerHTML = characterSvg({crop:'bust',expression:'talk'});
+    $('#consolePal').innerHTML = consoleFormSvg();
+    $('#previewName').textContent = state.pal.name;
+    $('#previewTrait').textContent = `${capitalize(state.pal.disposition)} starting disposition`;
+    $('#headerPalName').textContent = state.pal.name;
+    $('#dialogueName').textContent = state.pal.name;
+    $('#quickSpeaker').textContent = state.pal.name;
+  }
+
+  function setStep(step) {
+    state.step = step;
+    $$('.onboarding-step').forEach(section => section.hidden = Number(section.dataset.step) !== step);
+    $$('[data-step-dot]').forEach(dot => {
+      const n = Number(dot.dataset.stepDot);
+      dot.classList.toggle('active', n === step);
+      dot.classList.toggle('done', n < step);
+    });
+    $('#artModeLabel').textContent = step === 1 ? 'PAL CONCEPT ART' : step === 2 ? 'LIVE DESIGN PREVIEW' : 'INTERACTIVE FINAL ART';
+    $('#artViewport').setAttribute('aria-label', step === 3 ? 'Grab and drag to inspect the final PAL artwork' : 'Grab and drag to inspect the PAL artwork');
+    renderCharacterEverywhere();
+    $('.onboarding-panel').scrollTop = 0;
+  }
+
+  function addSwatch(root, field, index, value) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.style.setProperty('--swatch', value);
+    button.dataset.swatchField = field;
+    button.dataset.swatchIndex = String(index);
+    button.title = `${field} ${index + 1}`;
+    button.addEventListener('click', () => { state.pal[field] = index; syncChoices(); });
+    root.append(button);
+  }
+
+  function buildChoices() {
+    Object.keys(dispositions).forEach(key => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.disposition = key;
+      button.textContent = capitalize(key);
+      button.addEventListener('click', () => {
+        state.pal.disposition = key;
+        $('#dispositionHelp').textContent = dispositions[key];
+        syncChoices();
+      });
+      $('#dispositionChoices').append(button);
+    });
+    const hairNames = {swept:'Swept',bob:'Bob',curls:'Curls',short:'Short',long:'Long'};
+    Object.entries(hairNames).forEach(([key,label]) => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.dataset.hair = key; button.textContent = label;
+      button.addEventListener('click', () => { state.pal.hair = key; syncChoices(); });
+      $('#hairChoices').append(button);
+    });
+    const outfitNames = {coast:'Coast Hoodie',hoodie:'Campus Hoodie',cardigan:'Study Cardigan',varsity:'Varsity Layer',utility:'Utility Set'};
+    Object.entries(outfitNames).forEach(([key,label]) => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.dataset.outfit = key; button.textContent = label;
+      button.addEventListener('click', () => { state.pal.outfit = key; syncChoices(); });
+      $('#outfitChoices').append(button);
+    });
+    palettes.skin.forEach((value,index) => addSwatch($('#skinChoices'),'skin',index,value));
+    palettes.eyes.forEach((value,index) => addSwatch($('#eyeChoices'),'eyes',index,value));
+    palettes.hair.forEach((value,index) => addSwatch($('#hairColorChoices'),'hairColor',index,value));
+    syncChoices();
+  }
+
+  function syncChoices() {
+    $$('[data-disposition]').forEach(button => button.classList.toggle('active', button.dataset.disposition === state.pal.disposition));
+    $$('[data-hair]').forEach(button => button.classList.toggle('active', button.dataset.hair === state.pal.hair));
+    $$('[data-outfit]').forEach(button => button.classList.toggle('active', button.dataset.outfit === state.pal.outfit));
+    ['skin','eyes','hairColor'].forEach(field => $$(`[data-swatch-field="${field}"]`).forEach(button => button.classList.toggle('active', Number(button.dataset.swatchIndex) === state.pal[field])));
+    $('#palName').value = state.pal.name;
+    renderCharacterEverywhere();
+  }
+
+  function fillReview() {
+    const profile = profileFromEmail(state.email);
+    state.campus = profile.campus;
+    state.identity = profile.identity;
+    $('#reviewName').textContent = state.pal.name;
+    $('#reviewDisposition').textContent = capitalize(state.pal.disposition);
+    $('#reviewEmail').textContent = state.email;
+    $('#reviewCampus').textContent = state.campus;
+    $('#reviewIdentity').textContent = state.identity;
+  }
+
+  function validateEmail(value) { return /^[^\s@]+@[^\s@]+\.edu$/i.test(value.trim()); }
+
+  function initializePal() {
+    $('#initialization').hidden = false;
+    const statuses = [
+      ['Building local identity…',18],
+      ['Saving PAL appearance…',42],
+      ['Preparing dorm state…',67],
+      ['Linking Room View and Explorer Mode…',88],
+      ['Initialization complete.',100]
+    ];
+    let index = 0;
+    const advance = () => {
+      const [label,value] = statuses[index];
+      $('#initStatus').textContent = label;
+      $('#initProgress').style.width = `${value}%`;
+      index += 1;
+      if (index < statuses.length) setTimeout(advance, 430);
+      else setTimeout(() => {
+        $('#initialization').hidden = true;
+        $('#onboarding').hidden = true;
+        $('#roomSelect').hidden = false;
+        drawRoomPreviews();
+      }, 520);
+    };
+    advance();
+  }
+
+  function drawRoomPreview(canvas, roomKey) {
+    const ctx = canvas.getContext('2d');
+    const t = roomThemes[roomKey];
+    const w = canvas.width, h = canvas.height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = t.wall; ctx.fillRect(0,0,w,h*0.55);
+    ctx.fillStyle = t.floor; ctx.fillRect(0,h*0.55,w,h*0.45);
+    ctx.strokeStyle = 'rgba(20,36,74,.25)'; ctx.lineWidth=1;
+    for(let y=h*.55;y<h;y+=14){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+    ctx.fillStyle=t.sky;ctx.fillRect(w*.37,h*.08,w*.28,h*.28);ctx.strokeStyle='#14244a';ctx.lineWidth=4;ctx.strokeRect(w*.37,h*.08,w*.28,h*.28);
+    ctx.fillStyle=t.bedding;ctx.fillRect(w*.05,h*.42,w*.31,h*.34);ctx.strokeRect(w*.05,h*.42,w*.31,h*.34);
+    ctx.fillStyle='#8a572f';ctx.fillRect(w*.42,h*.43,w*.31,h*.12);ctx.strokeRect(w*.42,h*.43,w*.31,h*.12);
+    ctx.fillStyle='#293d64';ctx.fillRect(w*.53,h*.26,w*.11,h*.17);ctx.strokeRect(w*.53,h*.26,w*.11,h*.17);
+    ctx.fillStyle='#755035';ctx.fillRect(w*.79,h*.19,w*.16,h*.48);ctx.strokeRect(w*.79,h*.19,w*.16,h*.48);
+    ctx.fillStyle=t.rug;ctx.fillRect(w*.35,h*.68,w*.34,h*.22);ctx.strokeRect(w*.35,h*.68,w*.34,h*.22);
+  }
+
+  function drawRoomPreviews() { $$('[data-room-preview]').forEach(canvas => drawRoomPreview(canvas, canvas.dataset.roomPreview)); }
+
+  function roomSceneSvg() {
+    const t = roomThemes[state.room];
+    const night = state.time === 'night';
+    const sunset = state.time === 'sunset';
+    const sky = night ? '#172a59' : sunset ? '#ef8d73' : t.sky;
+    const overlay = night ? '<rect width="1200" height="650" fill="#132550" opacity=".40"/>' : sunset ? '<rect width="1200" height="650" fill="#e66d58" opacity=".14"/>' : '';
+    const activity = state.activity;
+    let palTransform = 'translate(450 115) scale(.78)';
+    let pose = 'standing';
+    if (activity === 'desk') { palTransform = 'translate(540 100) scale(.64)'; pose = 'sitting'; }
+    if (activity === 'bed') { palTransform = 'translate(170 168) scale(.61)'; pose = 'sitting'; }
+    if (activity === 'bookshelf') palTransform = 'translate(795 125) scale(.67)';
+    if (activity === 'window') palTransform = 'translate(430 90) scale(.70)';
+    const activityLabel = {center:'hanging out',desk:'working at the computer',bed:'sitting on the bed',bookshelf:'looking through the shelf',window:'watching campus outside'}[activity];
+    return `<svg viewBox="0 0 1200 650" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" aria-label="${escapeHtml(t.label)} Room View">
+      <rect width="1200" height="650" fill="${t.wall}"/>
+      <rect y="420" width="1200" height="230" fill="${t.floor}"/>
+      ${Array.from({length:15},(_,i)=>`<path d="M${i*90} 420L${i*75-80} 650" stroke="#693f2c" stroke-width="2" opacity=".32"/>`).join('')}
+      ${Array.from({length:7},(_,i)=>`<path d="M0 ${445+i*36}H1200" stroke="#693f2c" stroke-width="2" opacity=".25"/>`).join('')}
+      <rect x="405" y="70" width="300" height="230" fill="${sky}" stroke="#14244a" stroke-width="12"/>
+      <path d="M555 70V300M405 184H705" stroke="#14244a" stroke-width="8"/>
+      <path d="M415 255Q500 176 585 252Q650 190 695 245V292H415Z" fill="#5e9b79" opacity="${night?.45:.88}"/>
+      <circle cx="650" cy="118" r="28" fill="${night?'#f1e7b8':'#fff1a8'}"/>
+      <g aria-label="bed"><rect x="58" y="334" width="345" height="155" rx="8" fill="#7b4a2c" stroke="#14244a" stroke-width="8"/><rect x="73" y="300" width="310" height="155" rx="8" fill="${t.bedding}" stroke="#14244a" stroke-width="8"/><rect x="79" y="304" width="142" height="62" rx="16" fill="#fff6df" stroke="#14244a" stroke-width="6"/><path d="M235 306v145" stroke="#d7e6ff" stroke-width="5" opacity=".4"/></g>
+      <g aria-label="desk"><rect x="468" y="327" width="343" height="34" fill="#86522d" stroke="#14244a" stroke-width="7"/><rect x="493" y="359" width="25" height="145" fill="#86522d" stroke="#14244a" stroke-width="6"/><rect x="760" y="359" width="25" height="145" fill="#86522d" stroke="#14244a" stroke-width="6"/><rect x="566" y="215" width="144" height="108" rx="5" fill="#1c315d" stroke="#14244a" stroke-width="8"/><rect x="579" y="228" width="118" height="78" fill="#4e9de7"/><circle cx="638" cy="267" r="20" fill="none" stroke="#eaffff" stroke-width="6"/><path d="M626 267l9 9 17-20" fill="none" stroke="#eaffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><rect x="625" y="323" width="25" height="18" fill="#14244a"/><path d="M590 362h118" stroke="#14244a" stroke-width="10"/><rect x="620" y="366" width="58" height="105" rx="16" fill="#263d68" stroke="#14244a" stroke-width="7"/></g>
+      <g aria-label="bookshelf"><rect x="885" y="140" width="245" height="365" fill="#765032" stroke="#14244a" stroke-width="9"/>${[220,310,400].map(y=>`<path d="M892 ${y}h230" stroke="#14244a" stroke-width="7"/>`).join('')}${[[910,169,32,'#274e77'],[945,159,24,'#aa5b54'],[976,176,35,'#d4ad4c'],[1020,157,28,'#3e6b5c'],[1060,172,39,'#704c83'],[914,240,46,'#415a84'],[970,250,31,'#b66d45'],[1010,232,38,'#d6b86a'],[1060,245,40,'#3c725f']].map(([x,y,w,c])=>`<rect x="${x}" y="${y}" width="${w}" height="48" fill="${c}" stroke="#14244a" stroke-width="3"/>`).join('')}<circle cx="1020" cy="111" r="42" fill="#4e8a5f" stroke="#14244a" stroke-width="7"/><rect x="986" y="118" width="68" height="34" fill="#b96e45" stroke="#14244a" stroke-width="6"/></g>
+      <g aria-label="corkboard"><rect x="725" y="60" width="145" height="120" fill="#a96942" stroke="#14244a" stroke-width="8"/><rect x="738" y="75" width="119" height="89" fill="#c78e5d"/>${[[744,88,'#ffd86b'],[786,105,'#f28b86'],[826,83,'#82d8c4']].map(([x,y,c])=>`<rect x="${x}" y="${y}" width="28" height="36" fill="${c}" transform="rotate(${x%2?3:-4} ${x+14} ${y+18})"/><circle cx="${x+14}" cy="${y+5}" r="4" fill="#14244a"/>`).join('')}</g>
+      <g aria-label="rug"><path d="M370 465L826 465L905 630H288Z" fill="${t.rug}" stroke="#14244a" stroke-width="8"/><path d="M392 487H804L855 602H336Z" fill="none" stroke="${t.accent}" stroke-width="5" opacity=".7"/></g>
+      <g transform="${palTransform}">${characterMarkup({expression:'smile',pose})}</g>
+      <g transform="translate(18 18)"><rect width="270" height="50" rx="14" fill="rgba(16,26,51,.86)"/><text x="18" y="22" fill="#6be6d0" font-family="monospace" font-size="13" font-weight="900">ROOM VIEW</text><text x="18" y="40" fill="#fff" font-family="Arial, sans-serif" font-size="14">${escapeHtml(state.pal.name)} is ${activityLabel}.</text></g>
+      ${overlay}
+    </svg>`;
+  }
+
+  function updateRoomScene() {
+    $('#roomScene').innerHTML = roomSceneSvg();
+    $('#dialogueBackground').innerHTML = roomSceneSvg();
+    $('#headerPalState').textContent = ({center:'Relaxing in the room',desk:'Using the computer',bed:'Sitting on the bed',bookshelf:'Browsing the bookshelf',window:'Looking out the window'})[state.activity];
+    const hit = $('#roomPalHit');
+    const positions = {
+      center:{left:'50%',top:'55%',width:'220px',height:'390px'},
+      desk:{left:'59%',top:'49%',width:'170px',height:'310px'},
+      bed:{left:'28%',top:'56%',width:'160px',height:'280px'},
+      bookshelf:{left:'76%',top:'51%',width:'170px',height:'320px'},
+      window:{left:'50%',top:'48%',width:'180px',height:'330px'}
+    };
+    Object.assign(hit.style, positions[state.activity] || positions.center);
+    updateClock();
+  }
+
+  function updateClock() {
+    const now = new Date();
+    const time = now.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+    const date = now.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});
+    $('#gameTime').textContent = time;
+    $('#consoleTime').textContent = time;
+    $('#gameDate').textContent = date;
+    $('#walletBalance').textContent = String(state.wallet);
+    $('#worldLocation').textContent = `${roomThemes[state.room].label} · ${capitalize(state.time)}`;
+  }
+
+  function enterGame() {
+    $('#roomSelect').hidden = true;
+    $('#game').hidden = false;
+    state.view = 'room';
+    state.activity = 'center';
+    renderCharacterEverywhere();
+    updateRoomScene();
+    setView('room');
+    drawWorld();
+    showToast('Room View is the default. Toggle Explorer Mode when you want to move.');
+  }
+
+  function setView(view) {
+    state.view = view;
+    $('#roomView').hidden = view !== 'room';
+    $('#explorerView').hidden = view !== 'explorer';
+    $('#roomViewButton').classList.toggle('active', view === 'room');
+    $('#explorerViewButton').classList.toggle('active', view === 'explorer');
+    $('#viewHint').textContent = view === 'room' ? 'A close, composed view of the same room state.' : 'Move with WASD or directional keys; click objects or press E to interact.';
+    state.actionRing = false;
+    $('#roomActionRing').hidden = true;
+    if (view === 'room') updateRoomScene();
+    else drawWorld();
+  }
+
+  const grid = { cols:16, rows:10, tile:60, originX:0, originY:0 };
+  const objects = [
+    {id:'bed',x:.8,y:2.4,w:4.1,h:4,anchor:[5,5.8],label:'Sit on the bed'},
+    {id:'desk',x:5.8,y:1.1,w:5.4,h:3.9,anchor:[8.5,4],label:'Use the computer'},
+    {id:'bookshelf',x:12,y:1.9,w:3.2,h:3.6,anchor:[11,5.4],label:'Browse the bookshelf'},
+    {id:'window',x:6.7,y:.25,w:3.1,h:1.55,anchor:[5.4,3.8],label:'Look out the window'}
+  ];
+
+  function playerNearObject() {
+    const p = state.player;
+    let best = null, distance = Infinity;
+    objects.forEach(object => {
+      const d = Math.hypot(p.x-object.anchor[0],p.y-object.anchor[1]);
+      if (d < distance) { distance=d; best=object.id; }
+    });
+    return distance <= 1.5 ? best : null;
+  }
+
+  function isBlocked(x,y) {
+    if (x < 1 || x > 14 || y < 2 || y > 8.5) return true;
+    if (x < 5 && y < 6.1) return true;
+    if (x > 11.2 && y < 5.3) return true;
+    if (x > 5.5 && x < 11.3 && y < 3.8) return true;
+    return false;
+  }
+
+  function movePlayer(dx,dy) {
+    if (state.view !== 'explorer') return;
+    const nx = clamp(state.player.x + dx,1,14), ny = clamp(state.player.y + dy,2,8.5);
+    if (!isBlocked(nx,ny)) { state.player.x=nx; state.player.y=ny; state.player.step=(state.player.step+1)%2; }
+    state.player.dir = dx<0?'left':dx>0?'right':dy<0?'up':'down';
+    drawWorld();
+  }
+
+  function interactObject(id) {
+    if (!id) { showToast(`${state.pal.name} looks around the room.`); return; }
+    state.activity = id;
+    const text = {bed:'I could sit here for a while.',desk:'The computer is ready. I saved this spot for Room View.',bookshelf:'There are still empty shelves for books we collect.',window:'Campus looks calm from here.'}[id];
+    updateRoomScene();
+    drawWorld();
+    showToast(text);
+  }
+
+  function interactWorld() { interactObject(playerNearObject()); }
+
+  function interactWorldAtPointer(event) {
+    const canvas = $('#worldCanvas');
+    const rect = canvas.getBoundingClientRect();
+    const unit = Math.min(rect.width/16,rect.height/10);
+    const offsetX = (rect.width-unit*16)/2, offsetY = (rect.height-unit*10)/2;
+    const x = (event.clientX-rect.left-offsetX)/unit, y = (event.clientY-rect.top-offsetY)/unit;
+    const object = objects.find(item => x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h);
+    interactObject(object?.id || null);
+  }
+
+  function drawPixelPal(ctx,x,y,scale=1) {
+    const skin=palettes.skin[state.pal.skin],hair=palettes.hair[state.pal.hairColor],[main,trim]=outfitColors[state.pal.outfit]||outfitColors.coast;
+    const px=4*scale;
+    ctx.save();ctx.translate(x,y);ctx.imageSmoothingEnabled=false;
+    ctx.fillStyle='#101a33';ctx.fillRect(-5*px,9*px,10*px,2*px);
+    ctx.fillStyle=hair;ctx.fillRect(-4*px,-9*px,8*px,4*px);ctx.fillRect(-5*px,-7*px,10*px,3*px);ctx.fillRect(-4*px,-10*px,3*px,2*px);ctx.fillRect(1*px,-11*px,3*px,3*px);
+    ctx.fillStyle=skin;ctx.fillRect(-4*px,-5*px,8*px,6*px);
+    ctx.fillStyle='#101a33';ctx.fillRect(-2.5*px,-3*px,1*px,1*px);ctx.fillRect(1.5*px,-3*px,1*px,1*px);
+    ctx.fillStyle=main;ctx.fillRect(-4*px,1*px,8*px,6*px);ctx.fillRect(-5*px,2*px,1*px,5*px);ctx.fillRect(4*px,2*px,1*px,5*px);
+    ctx.fillStyle=trim;ctx.fillRect(-1*px,2*px,2*px,1*px);
+    ctx.fillStyle='#2f4c78';ctx.fillRect(-3*px,7*px,2*px,3*px);ctx.fillRect(1*px,7*px,2*px,3*px);
+    ctx.fillStyle=trim;ctx.fillRect(-4*px,10*px,3*px,1*px);ctx.fillRect(1*px,10*px,3*px,1*px);
+    ctx.restore();
+  }
+
+  function drawWorld() {
+    const canvas=$('#worldCanvas'),ctx=canvas.getContext('2d');
+    const rect=canvas.getBoundingClientRect(),pixelRatio=Math.min(window.devicePixelRatio||1,2);
+    if(rect.width>0&&rect.height>0){const nextWidth=Math.round(rect.width*pixelRatio),nextHeight=Math.round(rect.height*pixelRatio);if(canvas.width!==nextWidth||canvas.height!==nextHeight){canvas.width=nextWidth;canvas.height=nextHeight;}}
+    const canvasWidth=canvas.width,canvasHeight=canvas.height,t=roomThemes[state.room];
+    const unit=Math.min(canvasWidth/16,canvasHeight/10),w=unit*16,h=unit*10,sx=unit,sy=unit;
+    ctx.clearRect(0,0,canvasWidth,canvasHeight);ctx.imageSmoothingEnabled=false;
+    ctx.fillStyle='#111d38';ctx.fillRect(0,0,canvasWidth,canvasHeight);
+    ctx.save();ctx.translate((canvasWidth-w)/2,(canvasHeight-h)/2);
+    ctx.fillStyle=t.wall;ctx.fillRect(0,0,w,sy*2.2);
+    ctx.fillStyle=t.floor;ctx.fillRect(0,sy*2.2,w,h-sy*2.2);
+    ctx.strokeStyle='rgba(80,44,31,.30)';ctx.lineWidth=2;
+    for(let y=2.2;y<=10;y+=.7){ctx.beginPath();ctx.moveTo(0,y*sy);ctx.lineTo(w,y*sy);ctx.stroke();}
+    for(let x=0;x<=16;x++){ctx.beginPath();ctx.moveTo(x*sx,sy*2.2);ctx.lineTo((x-2)*sx,h);ctx.stroke();}
+    // Window and corkboard on wall.
+    ctx.fillStyle=state.time==='night'?'#1a3267':state.time==='sunset'?'#ed9277':t.sky;ctx.fillRect(sx*6.7,sy*.25,sx*3.1,sy*1.55);ctx.strokeStyle='#14244a';ctx.lineWidth=7;ctx.strokeRect(sx*6.7,sy*.25,sx*3.1,sy*1.55);ctx.beginPath();ctx.moveTo(sx*8.25,sy*.25);ctx.lineTo(sx*8.25,sy*1.8);ctx.stroke();
+    ctx.fillStyle='#b6794a';ctx.fillRect(sx*12.3,sy*.35,sx*2.6,sy*1.2);ctx.strokeRect(sx*12.3,sy*.35,sx*2.6,sy*1.2);
+    // Bed.
+    ctx.fillStyle='#75482f';ctx.fillRect(sx*.8,sy*2.4,sx*4.1,sy*4.0);ctx.strokeRect(sx*.8,sy*2.4,sx*4.1,sy*4.0);ctx.fillStyle=t.bedding;ctx.fillRect(sx*1.05,sy*2.55,sx*3.6,sy*3.35);ctx.strokeRect(sx*1.05,sy*2.55,sx*3.6,sy*3.35);ctx.fillStyle='#fff5df';ctx.fillRect(sx*1.2,sy*2.7,sx*2.1,sy*.85);ctx.strokeRect(sx*1.2,sy*2.7,sx*2.1,sy*.85);
+    // Desk.
+    ctx.fillStyle='#85532f';ctx.fillRect(sx*5.8,sy*2.4,sx*5.4,sy*.8);ctx.strokeRect(sx*5.8,sy*2.4,sx*5.4,sy*.8);ctx.fillRect(sx*6.1,sy*3.1,sx*.45,sy*1.9);ctx.fillRect(sx*10.5,sy*3.1,sx*.45,sy*1.9);ctx.fillStyle='#233c66';ctx.fillRect(sx*7.4,sy*1.1,sx*2.0,sy*1.25);ctx.strokeRect(sx*7.4,sy*1.1,sx*2.0,sy*1.25);ctx.fillStyle='#54b5e8';ctx.fillRect(sx*7.65,sy*1.35,sx*1.5,sy*.75);
+    // Shelf.
+    ctx.fillStyle='#705038';ctx.fillRect(sx*12.0,sy*1.9,sx*3.2,sy*3.6);ctx.strokeRect(sx*12.0,sy*1.9,sx*3.2,sy*3.6);for(let r=1;r<4;r++){ctx.beginPath();ctx.moveTo(sx*12,sy*(1.9+r*.9));ctx.lineTo(sx*15.2,sy*(1.9+r*.9));ctx.stroke();}
+    // Rug.
+    ctx.fillStyle=t.rug;ctx.fillRect(sx*5.8,sy*5.0,sx*5.1,sy*3.4);ctx.strokeRect(sx*5.8,sy*5.0,sx*5.1,sy*3.4);ctx.strokeStyle=t.accent;ctx.lineWidth=4;ctx.strokeRect(sx*6.1,sy*5.3,sx*4.5,sy*2.8);
+    // Door/threshold.
+    ctx.fillStyle='#24314b';ctx.fillRect(sx*6.8,sy*9.1,sx*2.4,sy*.9);
+    // PAL.
+    drawPixelPal(ctx,state.player.x*sx,state.player.y*sy,unit/60);
+    // Night overlay.
+    if(state.time==='night'){ctx.fillStyle='rgba(15,31,67,.35)';ctx.fillRect(0,0,w,h);}
+    ctx.restore();
+    // Prompt.
+    const near=playerNearObject();
+    $('#worldPrompt').hidden=!near;
+    if(near) $('#worldPromptText').textContent=objects.find(o=>o.id===near)?.label||'Interact';
+    drawMiniMap();
+  }
+
+  function drawMiniMap() {
+    const c=$('#miniMap'),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#111f38';ctx.fillRect(0,0,c.width,c.height);ctx.strokeStyle='#e4bd67';ctx.lineWidth=3;ctx.strokeRect(8,8,c.width-16,c.height-16);ctx.strokeRect(14,15,32,35);ctx.strokeRect(54,14,40,21);ctx.strokeRect(101,14,20,35);ctx.fillStyle='#5cf29b';ctx.beginPath();ctx.arc(8+(state.player.x/16)*(c.width-16),8+(state.player.y/10)*(c.height-16),5,0,Math.PI*2);ctx.fill();
+  }
+
+  function showDialogue(kind='talk') {
+    const lines = {
+      talk:`Hey. I am glad you are here. I was ${state.activity==='center'?'hanging out':state.activity==='desk'?'checking the computer':state.activity==='bed'?'sitting on the bed':state.activity==='bookshelf'?'looking through our shelf':'watching campus outside'}. What should we do first?`,
+      check:`I am doing all right. The room state is synchronized now, so I will still be here when you switch views.`,
+      plan:'We can check your agenda, then decide whether to study, explore, or take a break.'
+    };
+    $('#dialogueText').textContent=lines[kind]||lines.talk;
+    $('#dialogueMode').hidden=false;
+  }
+
+  function closeDialogue(){ $('#dialogueMode').hidden=true; }
+
+  function showQuickChat() {
+    $('#quickText').textContent = `I am currently ${$('#headerPalState').textContent.toLowerCase()}. Room View and Explorer Mode are showing the same state.`;
+    $('#quickChat').hidden=false;
+  }
+
+  function showToast(message) {
+    const toast=$('#toast');toast.textContent=message;toast.hidden=false;
+    if(state.view==='explorer')$('#worldPrompt').hidden=true;
+    clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>{toast.hidden=true;if(state.view==='explorer')drawWorld();},2600);
+  }
+
+  function openPanel(name) {
+    const data = {
+      agenda:['Agenda','Today',`<div class="panel-grid"><article class="panel-card"><h3>3:30 PM · Study block</h3><p>Review the project outline with ${escapeHtml(state.pal.name)}.</p></article><article class="panel-card"><h3>6:30 PM · Team demo</h3><p>Show Room View, Explorer Mode, and the synchronized PAL state.</p></article></div>`],
+      journal:['Journal','Local history','<div class="panel-grid"><article class="panel-card"><h3>Move-in day</h3><p>Chose a dorm, initialized the PAL, and tested two views of the same room.</p></article><article class="panel-card"><h3>Privacy</h3><p>Entries remain local in this demonstration and can eventually be corrected, deleted, or exported.</p></article></div>'],
+      collection:['Collection','Owned items','<div class="panel-grid"><article class="panel-card"><h3>Coast Hoodie</h3><p>Starter outfit currently equipped.</p></article><article class="panel-card"><h3>Move-in Photo</h3><p>A local memory collectible for the corkboard.</p></article></div>'],
+      customize:['Customize','PAL appearance',`<div class="panel-grid"><article class="panel-card"><h3>${escapeHtml(state.pal.name)}</h3><p>${capitalize(state.pal.disposition)} disposition · appearance remains consistent across Room, Explorer, Dialogue, and Console forms.</p></article><article class="panel-card"><h3>Focused v13 scope</h3><p>Use onboarding to change appearance. A larger customization studio is intentionally deferred.</p></article></div>`],
+      campusweb:['Campus Web','Embedded applications','<div class="panel-grid"><article class="panel-card"><h3>Campus Wallet</h3><p>Local balance: 60 SHARK. Full source embedding remains a subsequent integration pass.</p></article><article class="panel-card"><h3>Bookstore & Faucet</h3><p>This pass keeps these apps compact while improving anatomy and synchronized room interactions.</p></article></div>']
+    }[name] || ['PAL','Panel',''];
+    $('#panelKicker').textContent=data[1];$('#panelTitle').textContent=data[0];$('#panelContent').innerHTML=data[2];
+    $('#appPanel').hidden=false;
+    $('[data-panel-close]', $('#appPanel')).focus();
+  }
+
+  function closePanel() { $('#appPanel').hidden=true; }
+
+  function showConsoleRemark(message='I saved your place in the dorm.') {
+    const remark=$('#consoleRemark');remark.textContent=message;remark.hidden=false;clearTimeout(state.remarkTimer);state.remarkTimer=setTimeout(()=>remark.hidden=true,5200);
+  }
+
+  function openConsole() {
+    $('#consoleMode').hidden=false;
+    state.consoleSelected=false;state.consoleTool=null;
+    $('#consoleActions').hidden=true;$('#consoleToolScreen').hidden=true;
+    renderCharacterEverywhere();updateClock();showConsoleRemark();
+  }
+
+  function closeConsole() { $('#consoleMode').hidden=true;setView('room'); }
+
+  function toggleConsoleActions() {
+    state.consoleSelected=!state.consoleSelected;
+    $('#consoleActions').hidden=!state.consoleSelected;
+    $('#consoleGlow').hidden=false;setTimeout(()=>$('#consoleGlow').hidden=true,850);
+    if(state.consoleSelected) $('#consoleRemark').hidden=true;
+  }
+
+  function openConsoleTool(tool) {
+    state.consoleTool=tool;$('#consoleToolScreen').hidden=false;
+    const cards = {
+      talk:`<div class="console-tool-card"><h2>Talk</h2><p>Tap MIC and speak. In this prototype, ${escapeHtml(state.pal.name)} will acknowledge a sample request.</p><button class="button primary" data-console-sample>Ask about today</button></div>`,
+      brief:`<div class="console-tool-card"><h2>Daily Brief</h2><p>You have a study block at 3:30 PM and a team demo at 6:30 PM. Your PAL is currently ${escapeHtml($('#headerPalState').textContent.toLowerCase())}.</p></div>`,
+      wallet:`<div class="console-tool-card"><h2>Wallet</h2><div class="console-balance">${state.wallet} SHARK</div><p>${escapeHtml(state.pal.name)} cannot spend your money without permission. A future allowance can grant a bounded amount.</p></div>`,
+      calc:`<div class="console-tool-card"><h2>Calculator</h2><p><input id="consoleCalcInput" inputmode="decimal" placeholder="12 * 4" style="width:100%;height:52px;border:3px solid #63e2ce;border-radius:9px;padding:0 12px;background:#061f29;color:#fff;font-size:20px"><button class="button primary" data-calculate style="margin-top:12px">Calculate</button></p><strong id="consoleCalcResult" style="font-size:28px"></strong></div>`,
+      focus:`<div class="console-tool-card"><h2>Focus</h2><p id="focusReadout" class="console-balance">25:00</p><button class="button primary" data-focus-start>Start 25-minute timer</button></div>`
+    };
+    $('#consoleToolContent').innerHTML=cards[tool]||cards.brief;
+  }
+
+  function closeConsoleTool(){state.consoleTool=null;$('#consoleToolScreen').hidden=true;}
+
+  function handleConsoleDynamicClick(event) {
+    if(event.target.matches('[data-console-sample]')) { showConsoleRemark('You have two important blocks today. I can help prepare either one.'); closeConsoleTool(); }
+    if(event.target.matches('[data-calculate]')) {
+      const input=$('#consoleCalcInput').value.trim();
+      let result='Invalid expression';
+      if(/^[0-9+\-*/().\s%]+$/.test(input)) { try { result=String(Function(`"use strict";return (${input})`)()); } catch {} }
+      $('#consoleCalcResult').textContent=result;
+    }
+    if(event.target.matches('[data-focus-start]')) {
+      let seconds=25*60;const readout=$('#focusReadout');event.target.disabled=true;
+      const tick=()=>{seconds--;readout.textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;if(seconds>0&&state.consoleTool==='focus')setTimeout(tick,1000);};tick();
+    }
+  }
+
+  function setupArtPanning() {
+    const viewport=$('#artViewport');let dragging=false,startY=0,startPan=0,currentPan=0;
+    const apply=pan=>{currentPan=clamp(pan,-64,54);$('#fullArtPreview').style.setProperty('--art-pan',`${currentPan}px`);};
+    viewport.addEventListener('pointermove',event=>{
+      const rect=viewport.getBoundingClientRect();
+      if(dragging){apply(startPan+(event.clientY-startY)*.55);return;}
+      const normalized=(event.clientY-rect.top)/rect.height;
+      apply((normalized-.5)*-90);
+    });
+    viewport.addEventListener('pointerdown',event=>{dragging=true;startY=event.clientY;startPan=currentPan;viewport.setPointerCapture(event.pointerId);});
+    viewport.addEventListener('pointerup',event=>{dragging=false;viewport.releasePointerCapture(event.pointerId);});
+    viewport.addEventListener('pointerleave',()=>{if(!dragging&&state.step!==3)apply(0);});
+    viewport.addEventListener('keydown',event=>{if(event.key==='ArrowUp')apply(currentPan+12);if(event.key==='ArrowDown')apply(currentPan-12);});
+  }
+
+  function bindEvents() {
+    $('#identityForm').addEventListener('submit',event=>{
+      event.preventDefault();const email=$('#studentEmail').value.trim();
+      if(!validateEmail(email)){ $('#identityError').textContent='Enter a university email ending in .edu.'; return; }
+      state.email=email;$('#identityError').textContent='';setStep(2);
+    });
+    $('#sampleProfile').addEventListener('click',()=>{$('#studentEmail').value='mika@student.csulb.edu';state.email='mika@student.csulb.edu';setStep(2);});
+    $('#palName').addEventListener('input',event=>{state.pal.name=event.target.value.trim()||'PAL';renderCharacterEverywhere();});
+    $('#designBack').addEventListener('click',()=>setStep(1));
+    $('#designForm').addEventListener('submit',event=>{event.preventDefault();if(!state.pal.name.trim()){ $('#designError').textContent='Give your PAL a name.';return;}$('#designError').textContent='';fillReview();setStep(3);});
+    $('#reviewBack').addEventListener('click',()=>setStep(2));
+    $('#initializePal').addEventListener('click',initializePal);
+    $$('.room-card').forEach(card=>card.addEventListener('click',()=>{state.room=card.dataset.room;$$('.room-card').forEach(c=>c.classList.toggle('selected',c===card));}));
+    $('#enterGame').addEventListener('click',enterGame);
+    $('#roomViewButton').addEventListener('click',()=>setView('room'));
+    $('#explorerViewButton').addEventListener('click',()=>setView('explorer'));
+    $('#roomPalHit').addEventListener('click',()=>{state.actionRing=!state.actionRing;$('#roomActionRing').hidden=!state.actionRing;});
+    $('#roomActionRing').addEventListener('click',event=>{
+      const action=event.target.dataset.roomAction;if(!action)return;
+      if(action==='talk'||action==='check'||action==='plan')showDialogue(action);
+      else {showToast(`${state.pal.name}: I can compress into an icon, but I am trying to look dignified right now.`);}
+    });
+    $('#dialogueClose').addEventListener('click',closeDialogue);$('#dialogueBackdrop').addEventListener('click',closeDialogue);
+    $('.dialogue-choices').addEventListener('click',event=>{const choice=event.target.dataset.dialogueChoice;if(!choice)return;if(choice==='later')closeDialogue();else if(choice==='agenda')$('#dialogueText').textContent='Your main item is the team demo. I would start with the synchronized room-view explanation.';else $('#dialogueText').textContent=`I like ${roomThemes[state.room].label}. The important part is that this background matches Explorer Mode.`;});
+    $('#palPortraitButton').addEventListener('click',showQuickChat);$$('[data-quick-close]').forEach(button=>button.addEventListener('click',()=>$('#quickChat').hidden=true));
+    $('#metaButton').addEventListener('click',()=>$('#metaBar').hidden=!$('#metaBar').hidden);$('#metaBar').addEventListener('click',event=>{if(event.target.dataset.time){state.time=event.target.dataset.time;updateRoomScene();drawWorld();}if(event.target.dataset.activity){state.activity=event.target.dataset.activity;const map={center:[8,7],desk:[8,4],bed:[5,6],bookshelf:[12,5]};if(map[state.activity]){state.player.x=map[state.activity][0];state.player.y=map[state.activity][1];}updateRoomScene();drawWorld();}if(event.target.hasAttribute('data-meta-close'))$('#metaBar').hidden=true;});
+    $$('.game-dock button').forEach(button=>button.addEventListener('click',()=>openPanel(button.dataset.panel)));
+    $$('[data-panel-close]').forEach(button=>button.addEventListener('click',closePanel));
+    $('#consoleButton').addEventListener('click',openConsole);$('#consolePower').addEventListener('click',closeConsole);$('#consolePal').addEventListener('click',toggleConsoleActions);$('#consoleActions').addEventListener('click',event=>{const tool=event.target.dataset.consoleTool;if(tool)openConsoleTool(tool);});$('#consoleBack').addEventListener('click',closeConsoleTool);$('#consoleB').addEventListener('click',()=>state.consoleTool?closeConsoleTool():($('#consoleActions').hidden=true,state.consoleSelected=false));$('#consoleA').addEventListener('click',()=>state.consoleTool?null:toggleConsoleActions());$('#consoleMic').addEventListener('click',()=>showConsoleRemark('I heard you. Voice recognition is represented as a local demo action.'));$('#consoleRemark').addEventListener('click',()=>$('#consoleRemark').hidden=true);$('#consoleToolContent').addEventListener('click',handleConsoleDynamicClick);
+    $$('.touch-controls [data-move]').forEach(button=>button.addEventListener('click',()=>{const d=button.dataset.move;movePlayer(d==='left'?-1:d==='right'?1:0,d==='up'?-1:d==='down'?1:0);}));$('[data-interact]').addEventListener('click',interactWorld);
+    $('#worldPrompt').addEventListener('click',interactWorld);$('#worldCanvas').addEventListener('click',interactWorldAtPointer);
+    window.addEventListener('resize',()=>{if(state.view==='explorer'&&!$('#game').hidden)drawWorld();});
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){
+        if(!$('#appPanel').hidden){closePanel();return;}
+        if(!$('#consoleMode').hidden){state.consoleTool?closeConsoleTool():closeConsole();return;}
+        if(!$('#dialogueMode').hidden){closeDialogue();return;}
+        if(!$('#quickChat').hidden){$('#quickChat').hidden=true;return;}
+      }
+      if(!$('#appPanel').hidden)return;
+      if(!$('#consoleMode').hidden){if(event.key.toLowerCase()==='b')state.consoleTool?closeConsoleTool():($('#consoleActions').hidden=true,state.consoleSelected=false);return;}
+      if(!$('#dialogueMode').hidden||!$('#quickChat').hidden)return;
+      if(event.key==='Tab'&&!$('#game').hidden){event.preventDefault();setView(state.view==='room'?'explorer':'room');return;}
+      if(state.view!=='explorer')return;
+      const key=event.key.toLowerCase();if(['arrowleft','a'].includes(key))movePlayer(-.5,0);if(['arrowright','d'].includes(key))movePlayer(.5,0);if(['arrowup','w'].includes(key))movePlayer(0,-.5);if(['arrowdown','s'].includes(key))movePlayer(0,.5);if(['e','enter',' '].includes(key)){event.preventDefault();interactWorld();}
+    });
+  }
+
+  buildChoices();
+  bindEvents();
+  setupArtPanning();
+  renderCharacterEverywhere();
+  drawRoomPreviews();
+  setStep(1);
+  updateClock();
+  setInterval(updateClock,30000);
+})();
+
+</script>
+</body>
+</html>
