@@ -49,7 +49,7 @@ test('cross-mode accessibility contracts are present', () => {
   }
 });
 
-test('the three official dorm themes also skin Console mode', () => {
+test('the three official dorm themes coexist with a neutral Console mode', () => {
   const html = read('index.html');
   const css = read('styles.css');
   const javascript = read('app.js');
@@ -59,11 +59,8 @@ test('the three official dorm themes also skin Console mode', () => {
   }
 
   assert.match(javascript, /document\.documentElement\.dataset\.roomTheme\s*=\s*state\.room/);
-  for (const key of ['sunlit', 'creative', 'tech']) {
-    assert.match(css, new RegExp(`data-room-theme=["']${key}["']`));
-  }
-  assert.match(css, /--console-shell-start/);
-  assert.match(css, /var\(--console-shell-start\)/);
+  assert.match(css, /\.console-device\s*\{[\s\S]*background:\s*linear-gradient\(145deg,#fff,#d9dce0 48%,#aeb3b9\)/);
+  assert.match(css, /\.console-screen\s*\{[\s\S]*background:\s*#292d33/);
 });
 
 test('character creation exposes an accessible four-view turntable', () => {
@@ -82,13 +79,13 @@ test('character creation exposes an accessible four-view turntable', () => {
   assert.match(design, /horizontal drag|horizontal swipe/i);
 });
 
-test('the default Buddy is a cohesive customizable electronic blank canvas', () => {
+test('the default Buddy is a cohesive customizable blank canvas', () => {
   const html = read('index.html');
   const javascript = read('app.js');
   const css = read('styles.css');
   const design = read('DESIGN.md');
 
-  assert.match(javascript, /electronic blank canvas/i);
+  assert.match(javascript, /simple customizable Buddy/i);
   assert.match(javascript, /data-base-body/);
   assert.match(javascript, /data-signal-eye/);
   assert.match(javascript, /function hairMarkup/);
@@ -114,10 +111,18 @@ test('onboarding owns the visual viewport without horizontal clipping', () => {
   assert.match(css, /\.design-grid[^}]*grid-template-rows:\s*minmax\(0,1fr\)\s+auto/s);
 });
 
-test('portrait onboarding removes clutter and offers RGB controls', () => {
-  const html=read('index.html'), css=read('styles.css');
+test('portrait onboarding removes clutter and offers compact hue controls with hex values', () => {
+  const html=read('index.html'), css=read('styles.css'), javascript=read('app.js');
   assert.doesNotMatch(html,/Your practical campus companion|BUDDY CONCEPT ART|Local prototype\.|Default form · Electronic blank canvas|Electronic shell/);
-  for(const id of ['shellR','shellG','shellB','signalR','signalG','signalB']) assert.match(html,new RegExp(`id="${id}"[^>]+type="range"|type="range"[^>]+id="${id}"`));
+  for(const field of ['shell','signal','hair']) {
+    assert.match(html,new RegExp(`id="${field}Hue"[^>]+type="range"|type="range"[^>]+id="${field}Hue"`));
+    assert.match(html,new RegExp(`id="${field}ColorOutput"`));
+  }
+  assert.match(html,/id="hairColorField"[^>]+hidden/);
+  assert.match(javascript,/hairColorField'\)\.hidden\s*=\s*!hasHair/);
+  assert.match(javascript,/output\.value\s*=\s*color\.toUpperCase\(\)/);
+  assert.match(css,/linear-gradient\(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00\)/i);
+  assert.doesNotMatch(css,/#shellColorOutput\s*\{\s*display:\s*none/);
   assert.match(css,/@media[^}]+max-width:\s*700px[\s\S]+\.rotation-controls\s*\{[^}]*display:\s*none/i);
 });
 
@@ -129,22 +134,38 @@ test('starting Home is selected before initialization', () => {
   assert.match(javascript,/function initializePal[\s\S]+enterGame\(\)/);
 });
 
-test('game navigation uses Home and portrait overlays stay in the viewport', () => {
+test('game navigation uses Home, a fitted 16 by 10 Explorer grid, and held movement', () => {
   const html=read('index.html'), css=read('styles.css'), javascript=read('app.js');
   assert.match(html,/>Home<\/button>/);
   assert.doesNotMatch(html,/SHARK<\/span>/);
   assert.match(css,/\.app-panel\s*\{[\s\S]*position:\s*fixed/i);
   assert.match(css,/\.touch-controls\s*\{[\s\S]*position:\s*absolute/i);
-  assert.match(javascript,/Math\.max\(canvasWidth\/16,canvasHeight\/10\)/);
+  assert.match(css,/\.game\{[^}]*grid-template-rows:54px 42px 0 minmax\(0,1fr\) 58px/);
+  assert.match(css,/\.touch-controls\{[^}]*left:10px[^}]*right:10px[^}]*transform:none/);
+  assert.match(javascript,/const grid\s*=\s*\{\s*cols:16,\s*rows:10\s*\}/);
+  assert.match(javascript,/Math\.min\(canvasWidth\/grid\.cols,canvasHeight\/grid\.rows\)/);
+  assert.match(javascript,/const PLAYER_STEP_MS\s*=\s*145/);
+  assert.match(javascript,/holdPlayerMove\(key,moves\[key\]\)/);
+  assert.doesNotMatch(javascript,/progress \* progress \* \(3 - 2 \* progress\)/);
   assert.match(javascript,/\.touch-controls \[data-move\]/);
+  assert.match(javascript,/addEventListener\('pointerdown'/);
 });
 
-test('Console is a visible assistant app with the customized low-resolution head', () => {
+test('Console Mode is a visible assistant app with the customized low-resolution head', () => {
   const html=read('index.html'), javascript=read('app.js');
-  assert.match(html,/id="consoleButton"[^>]*>Console<\/button>/);
-  assert.match(html,/aria-label="Buddy Console"/);
+  assert.match(html,/id="consoleButton"[^>]*>Console Mode<\/button>/);
+  assert.match(html,/id="consoleMode"[^>]+aria-label="Console Mode"/);
+  assert.match(html,/class="console-frame-label">CONSOLE MODE<\/div>/);
+  assert.doesNotMatch(html,/BUDDY\s*[·*]\s*DIGITAL FORM/i);
   assert.match(javascript,/data-console-head/);
   assert.match(javascript,/state\.pal\.hair/);
   assert.match(html,/data-console-tool="talk"/);
-  assert.match(javascript,/function roomSceneSvg[\s\S]+id="entityFill"/);
+});
+
+test('Home and dialogue use fitted room art without a duplicate background Buddy', () => {
+  const css=read('styles.css'), javascript=read('app.js');
+  assert.match(javascript,/preserveAspectRatio="xMidYMid meet"/);
+  assert.match(javascript,/roomSceneSvg\(\{includeBuddy:false,includeStatus:false\}\)/);
+  assert.match(css,/\.dialogue-art\s*\{[\s\S]*left:\s*50%[\s\S]*transform:\s*translateX\(-50%\)/);
+  assert.match(css,/\.dialogue-box\s*\{[\s\S]*left:\s*4%[\s\S]*right:\s*4%[\s\S]*bottom:\s*4%/);
 });

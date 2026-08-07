@@ -73,33 +73,32 @@
                     <small id="dispositionHelp">Curious Buddies ask follow-up questions and notice patterns.</small>
                   </fieldset>
 
-                  <fieldset class="field-wide color-fieldset">
-                    <legend>Color</legend>
-                    <div class="rgb-control" data-rgb-control="shell">
-                      <label>R <input id="shellR" type="range" min="0" max="255" value="234"></label>
-                      <label>G <input id="shellG" type="range" min="0" max="255" value="252"></label>
-                      <label>B <input id="shellB" type="range" min="0" max="255" value="255"></label>
-                      <output id="shellColorOutput" aria-live="polite">#EAFCFF</output>
-                    </div>
-                  </fieldset>
-                  <fieldset class="field-wide color-fieldset">
+                  <fieldset class="field-wide color-fieldset" data-appearance-field="signal">
                     <legend>Eye color</legend>
-                    <div class="rgb-control" data-rgb-control="signal">
-                      <label>R <input id="signalR" type="range" min="0" max="255" value="105"></label>
-                      <label>G <input id="signalG" type="range" min="0" max="255" value="231"></label>
-                      <label>B <input id="signalB" type="range" min="0" max="255" value="176"></label>
-                      <output id="signalColorOutput" aria-live="polite">#69E7B0</output>
+                    <div class="hue-control" data-hue-control="signal">
+                      <input id="signalHue" type="range" min="0" max="360" value="240" aria-label="Eye color hue">
+                      <output id="signalColorOutput" aria-live="polite">#181820</output>
                     </div>
                   </fieldset>
-                  <fieldset class="field-wide compact-fieldset">
+                  <fieldset class="field-wide color-fieldset" data-appearance-field="shell">
+                    <legend>Color</legend>
+                    <div class="hue-control" data-hue-control="shell">
+                      <input id="shellHue" type="range" min="0" max="360" value="187" aria-label="Buddy color hue">
+                      <output id="shellColorOutput" aria-live="polite">#EAFDFF</output>
+                    </div>
+                  </fieldset>
+                  <fieldset class="field-wide compact-fieldset" data-appearance-field="hair">
                     <legend>Hair style</legend>
                     <div id="hairChoices" class="chip-row"></div>
                   </fieldset>
-                  <fieldset>
+                  <fieldset id="hairColorField" data-appearance-field="hair-color" hidden>
                     <legend>Hair color</legend>
-                    <div id="hairColorChoices" class="swatch-row"></div>
+                    <div class="hue-control hair-hue-control">
+                      <input id="hairHue" type="range" min="0" max="360" value="215" aria-label="Hair color hue">
+                      <output id="hairColorOutput" aria-live="polite">#28364E</output>
+                    </div>
                   </fieldset>
-                  <fieldset class="field-wide compact-fieldset">
+                  <fieldset class="field-wide compact-fieldset" data-appearance-field="outfit">
                     <legend>Starter clothing</legend>
                     <div id="outfitChoices" class="chip-row"></div>
 
@@ -158,7 +157,7 @@
     <section id="game" class="game" hidden aria-label="Buddy game">
       <header class="game-header">
         <div class="header-left">
-          <button id="consoleButton" class="console-launch" type="button" aria-label="Open Buddy Console" title="Open Buddy Console">Console</button>
+          <button id="consoleButton" class="console-launch" type="button" aria-label="Open Console Mode" title="Open Console Mode">Console Mode</button>
           <div class="game-brand"><strong>Campus Buddy</strong><small id="worldLocation">Dorm 1A · Day</small></div>
         </div>
 
@@ -257,9 +256,9 @@
       </div>
     </section>
 
-    <section id="consoleMode" class="console-mode" hidden role="dialog" aria-modal="true" aria-label="Buddy Console">
+    <section id="consoleMode" class="console-mode" hidden role="dialog" aria-modal="true" aria-label="Console Mode">
       <div class="console-device">
-        <div class="console-frame-label">BUDDY · DIGITAL FORM</div>
+        <div class="console-frame-label">CONSOLE MODE</div>
         <time id="consoleTime">10:01 PM</time>
         <div class="console-screen">
           <div class="console-pattern"></div>

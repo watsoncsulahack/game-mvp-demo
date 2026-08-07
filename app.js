@@ -35,13 +35,14 @@
       disposition: 'curious',
       shell: 0,
       signal: 0,
-      shellColor: '#eafcff',
-      signalColor: '#69e7b0',
+      shellColor: '#f7fbfc',
+      signalColor: '#171923',
       hair: 'none',
       hairColor: 0,
+      hairColorValue: '#26354d',
       outfit: 'none'
     },
-    player: { x: 8, y: 7, dir: 'down', step: 0 },
+    player: { x: 8, y: 7, displayX: 8, displayY: 7, dir: 'down', step: 0, movement: null },
     activity: 'center',
     actionRing: false,
     consoleSelected: false,
@@ -86,7 +87,7 @@
       bob: side ? 'M128 96Q128 48 165 41Q203 44 209 80L203 164L181 151L169 75L140 113L140 165L122 151Z' : back ? 'M110 102Q111 47 160 40Q210 47 210 105L207 173Q184 160 160 168Q136 160 113 173Z' : 'M110 104Q111 49 159 41Q207 49 211 103L207 169L187 156L188 85Q161 70 134 88L133 158L112 170Z',
       cloud: side ? 'M123 87Q122 57 146 51Q158 31 179 45Q201 36 211 59Q226 69 218 91Q222 110 201 115Q183 125 166 111L142 123Q121 116 123 87Z' : 'M105 92Q103 62 130 53Q143 30 166 44Q191 32 203 57Q222 66 215 91Q220 112 198 118Q180 129 160 113Q139 129 119 117Q98 110 105 92Z'
     };
-    return `<path data-hair="true" d="${shapes[style] || shapes.swept}" fill="${color}" stroke="#48677a" stroke-width="5" stroke-linejoin="round"/>`;
+    return `<path data-hair="true" d="${shapes[style] || shapes.swept}" fill="${color}" stroke="#11131a" stroke-width="5" stroke-linejoin="round"/>`;
   }
 
   function outfitMarkup(style, view) {
@@ -95,8 +96,8 @@
     const palette=style==='hoodie'?['#5fb594','#397b69','#38546d']:style==='jacket'?['#ef9b7f','#fff5dc','#4d6178']:['#5d7fe6','#dff7ff','#405675'];
     const [top,trim,pants]=palette;
     return side
-      ? `<g data-outfit="true"><path d="M137 175Q160 163 185 177L198 217L190 345H137L130 218Z" fill="${top}" stroke="#48677a" stroke-width="6"/><path d="M138 339L188 339L200 482Q202 497 190 502L176 500L161 383L154 495Q151 506 139 503L127 497L136 339Z" fill="${pants}" stroke="#48677a" stroke-width="6"/>${style==='hoodie'?`<path d="M140 179Q160 151 181 177L174 204L159 192L147 205Z" fill="${trim}"/>`:''}</g>`
-      : `<g data-outfit="true"><path d="M103 181Q160 157 217 181L230 224L211 236L203 348H117L109 236L90 224Z" fill="${top}" stroke="#48677a" stroke-width="6"/><path d="M118 342H202L209 481Q213 498 198 503H180L161 390L143 503H124Q108 498 112 481Z" fill="${pants}" stroke="#48677a" stroke-width="6"/>${style==='hoodie'?`<path d="M129 179Q160 145 191 179L180 210L160 193L140 210Z" fill="${trim}" stroke="#48677a" stroke-width="4"/>`:style==='jacket'?`<path d="M132 177L160 210L188 177M160 210V342" fill="none" stroke="${trim}" stroke-width="6"/>`:`<path d="M142 177Q160 192 178 177" fill="none" stroke="${trim}" stroke-width="5"/>`}</g>`;
+      ? `<g data-outfit="true"><path d="M137 175Q160 163 185 177L198 217L190 345H137L130 218Z" fill="${top}" stroke="#11131a" stroke-width="6"/><path d="M138 339L188 339L200 482Q202 497 190 502L176 500L161 383L154 495Q151 506 139 503L127 497L136 339Z" fill="${pants}" stroke="#11131a" stroke-width="6"/>${style==='hoodie'?`<path d="M140 179Q160 151 181 177L174 204L159 192L147 205Z" fill="${trim}"/>`:''}</g>`
+      : `<g data-outfit="true"><path d="M103 181Q160 157 217 181L230 224L211 236L203 348H117L109 236L90 224Z" fill="${top}" stroke="#11131a" stroke-width="6"/><path d="M118 342H202L209 481Q213 498 198 503H180L161 390L143 503H124Q108 498 112 481Z" fill="${pants}" stroke="#11131a" stroke-width="6"/>${style==='hoodie'?`<path d="M129 179Q160 145 191 179L180 210L160 193L140 210Z" fill="${trim}" stroke="#11131a" stroke-width="4"/>`:style==='jacket'?`<path d="M132 177L160 210L188 177M160 210V342" fill="none" stroke="${trim}" stroke-width="6"/>`:`<path d="M142 177Q160 192 178 177" fill="none" stroke="${trim}" stroke-width="5"/>`}</g>`;
   }
 
   function characterMarkup({ pose = 'standing', angle = 0 } = {}) {
@@ -105,20 +106,28 @@
     const view = normalized === 180 ? 'back' : normalized === 90 || normalized === 270 ? 'side' : 'front';
     const shell = state.pal.shellColor || palettes.shell[state.pal.shell];
     const signal = state.pal.signalColor || palettes.signal[state.pal.signal];
-    const hair = palettes.hair[state.pal.hairColor];
-    const bodyPath = view === 'side'
-      ? 'M163 41C143 41 130 52 127 72L125 111Q125 135 143 148V163Q127 170 121 190L113 239L103 321Q100 334 106 345L101 354Q98 363 108 370Q118 376 126 367L136 354Q141 346 135 337L143 270L141 348L130 474L112 495Q106 504 116 510H154Q161 508 163 498L166 414L176 492Q178 505 190 507L209 502Q217 496 210 483L190 347L191 216Q190 181 177 163V148Q195 136 198 112L201 78Q202 55 184 45Q174 40 163 41Z'
-      : 'M160 40C135 40 119 52 115 73L112 110Q111 133 138 149V162Q113 166 99 184L88 207L78 292L74 326Q72 339 80 347L78 356Q76 367 87 372Q98 376 105 366L113 355Q118 347 110 338L115 321L122 247L126 335Q130 350 119 374L111 474L96 495Q90 505 103 511H140Q151 510 153 497L158 407H162L167 497Q169 510 180 511H217Q230 505 224 495L209 474L201 374Q190 350 194 335L198 247L205 321L210 338Q202 347 207 355L215 366Q222 376 233 372Q244 367 242 356L240 347Q248 339 246 326L242 292L232 207L221 184Q207 166 182 162V149Q209 133 208 110L205 73Q201 52 176 42Q168 39 160 40Z';
+    const hair = state.pal.hairColorValue || palettes.hair[state.pal.hairColor];
+    // Each view has its own softly irregular silhouette. The uneven head, broad
+    // shoulders, low hands, long legs, and directional feet preserve the human
+    // proportions and hand-drawn warmth of the supplied character sheets.
+    const frontPath = 'M153 37C136 36 122 41 115 54C110 64 111 78 110 96L109 112C109 132 118 147 138 158L138 177C113 181 96 193 86 211C82 220 81 237 79 259L72 315C70 330 75 342 85 349L80 361C76 370 80 380 90 384C100 388 110 382 113 372L117 360C120 353 118 347 112 343L126 348C129 365 127 386 124 408L116 477L98 500C91 509 96 516 108 516H137C148 516 152 510 153 499L157 323C158 315 163 315 164 323L168 499C169 511 175 516 186 516H214C226 516 230 509 223 500L205 477L199 407C196 385 194 366 197 349L210 343C204 347 202 353 205 360L211 372C214 381 222 387 232 383C241 379 244 369 239 360L234 348C244 340 248 328 246 313L240 259C238 236 237 220 232 210C223 193 204 181 181 177L181 159C199 149 208 133 209 112L208 76C207 54 193 41 172 37C166 36 159 36 153 37Z';
+    const backPath = 'M149 37C129 37 115 50 112 68L111 111C110 132 121 148 139 157L139 178C114 181 95 192 85 211C80 224 79 247 77 271L71 339C70 354 76 366 87 372L80 385C75 396 80 407 91 411C103 414 112 406 115 395L120 380C123 370 119 363 112 359L126 354L123 405L116 477L99 500C92 510 97 516 109 516H139C149 516 153 510 154 499L158 326C159 318 164 318 165 326L169 499C170 511 176 516 187 516H212C224 516 229 508 222 500L205 477L199 405L196 355L208 352C202 358 199 367 202 376L208 389C213 400 223 405 233 399C243 393 245 382 239 372L233 360C242 352 246 340 244 325L239 258C237 235 235 219 229 208C219 191 201 181 181 178L181 157C199 148 208 133 208 113L207 70C205 51 190 40 170 37C163 36 156 36 149 37Z';
+    const sidePath = 'M148 37C128 37 115 49 112 70L111 117C110 138 120 151 138 158L147 162L146 179C126 183 113 196 109 217C106 241 106 277 107 310C107 333 111 349 118 361L114 473L96 495C87 506 91 514 104 517C122 520 145 517 163 512L204 497C214 493 218 484 212 479C206 474 192 474 178 472L175 365C181 372 190 376 198 371C208 366 212 357 210 345L207 222C205 201 194 189 176 184H170C162 184 157 178 157 169C157 161 162 155 170 154H174C189 153 198 144 201 131C204 120 205 99 201 78C197 55 181 41 160 38C156 37 152 36 148 37Z';
+    const bodyPath = view === 'side' ? sidePath : view === 'back' ? backPath : frontPath;
     const eyes = view === 'back' ? '' : view === 'side'
-      ? `<rect data-signal-eye="true" x="174" y="111" width="13" height="62" rx="7" fill="${signal}" filter="url(#eyeGlow)"/>`
-      : `<rect data-signal-eye="true" x="124" y="110" width="13" height="64" rx="7" fill="${signal}" filter="url(#eyeGlow)"/><rect data-signal-eye="true" x="183" y="110" width="13" height="64" rx="7" fill="${signal}" filter="url(#eyeGlow)"/>`;
+      ? `<path data-signal-eye="true" d="M181 76C179 89 179 105 178 119" fill="none" stroke="${signal}" stroke-width="10" stroke-linecap="round"/>`
+      : `<path data-signal-eye="true" d="M129 78C128 90 128 103 129 114" fill="none" stroke="${signal}" stroke-width="10" stroke-linecap="round"/><path data-signal-eye="true" d="M186 78C184 90 184 103 185 115" fill="none" stroke="${signal}" stroke-width="10" stroke-linecap="round"/>`;
+    const limbDetail = view === 'side'
+      ? '<path data-limb-detail="arm" d="M171 204C169 245 168 294 170 331C171 348 176 360 184 367" fill="none" stroke="#11131a" stroke-width="7" stroke-linecap="round"/>'
+      : '<path data-limb-detail="arms" d="M121 219C120 257 117 306 113 342M201 219C202 258 205 307 209 342" fill="none" stroke="#11131a" stroke-width="7" stroke-linecap="round"/>';
     const transform = `${mirrored ? 'translate(320 0) scale(-1 1)' : ''}${pose === 'sitting' ? ' rotate(5 160 330)' : ''}`;
     return `<g transform="${transform}" data-entity-view="${normalized}">
-      <ellipse cx="160" cy="518" rx="67" ry="9" fill="#58758a" opacity=".16"/>
-      <path data-base-body="true" d="${bodyPath}" fill="url(#entityFill)" stroke="#62889b" stroke-width="7" stroke-linejoin="round"/>
-      <path data-anatomy="neck" d="M134 149V164H186V149" fill="none" stroke="transparent"/>
-      ${view==='side' ? '<path data-visible-arm="true" data-anatomy="hand" d="M121 190L103 321Q100 334 106 345L101 354Q98 363 108 370Q118 376 126 367" fill="none" stroke="transparent"/>' : '<path data-visible-arm="true" data-anatomy="hand" d="M99 184L74 326Q72 339 80 347L78 356Q76 367 87 372Q98 376 105 366" fill="none" stroke="transparent"/><path data-visible-arm="true" data-anatomy="hand" d="M221 184L246 326Q248 339 240 347L242 356Q244 367 233 372Q222 376 215 366" fill="none" stroke="transparent"/>'}
-      <path data-anatomy="foot" d="M111 474L96 495Q90 505 103 511H140M209 474L224 495Q230 505 217 511H180" fill="none" stroke="transparent"/>
+      <ellipse cx="160" cy="522" rx="69" ry="9" fill="#58758a" opacity=".16"/>
+      <path data-base-body="true" d="${bodyPath}" fill="${shell}" stroke="#11131a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      ${limbDetail}
+      <path data-anatomy="neck" d="M138 158V178H181V158" fill="none" stroke="transparent"/>
+      ${view==='side' ? '<path data-visible-arm="true" data-anatomy="hand" d="M207 222L210 345C212 357 208 366 198 371C190 376 181 372 175 365" fill="none" stroke="transparent"/>' : '<path data-visible-arm="true" data-anatomy="hand" d="M86 211L72 326C70 342 75 354 85 361L78 375C73 386 78 397 88 402C99 407 109 401 114 390" fill="none" stroke="transparent"/><path data-visible-arm="true" data-anatomy="hand" d="M232 210L246 324C248 339 244 352 234 360L241 374C248 384 245 396 235 401C224 407 214 402 209 391" fill="none" stroke="transparent"/>'}
+      <path data-anatomy="foot" d="M116 477L98 500C91 509 96 516 108 516H137M205 477L223 500C230 509 226 516 214 516H182" fill="none" stroke="transparent"/>
       ${eyes}
       ${hairMarkup(state.pal.hair, hair, view)}
       ${outfitMarkup(state.pal.outfit, view)}
@@ -127,11 +136,8 @@
 
   function characterSvg({ crop = 'full', pose = 'standing', angle = 0 } = {}) {
     const normalized = normalizePreviewAngle(angle);
-    const shell = state.pal.shellColor || palettes.shell[state.pal.shell];
-    const signal = state.pal.signalColor || palettes.signal[state.pal.signal];
     const viewBox = crop === 'bust' ? '66 40 188 220' : crop === 'waist' ? '43 38 234 375' : '28 30 264 500';
-    return `<svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(state.pal.name)} electronic blank canvas entity, ${PREVIEW_VIEW_LABELS[normalized]} view">
-      <defs><linearGradient id="entityFill" x1="0" y1="0" x2=".72" y2="1"><stop stop-color="#ffffff"/><stop offset=".48" stop-color="${shell}"/><stop offset="1" stop-color="#a8ddea"/></linearGradient><filter id="eyeGlow" x="-200%" y="-80%" width="500%" height="260%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    return `<svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(state.pal.name)} simple customizable Buddy, ${PREVIEW_VIEW_LABELS[normalized]} view">
       ${characterMarkup({pose,angle:normalized})}
     </svg>`;
   }
@@ -139,17 +145,17 @@
   function consoleFormSvg() {
     const shell=state.pal.shellColor||palettes.shell[state.pal.shell];
     const signal=state.pal.signalColor||palettes.signal[state.pal.signal];
-    const hair=palettes.hair[state.pal.hairColor];
+    const hair=state.pal.hairColorValue || palettes.hair[state.pal.hairColor];
     const consoleHair=state.pal.hair==='none'?'':state.pal.hair==='bob'
       ? `<path d="M62 111V65Q65 31 128 29Q190 31 194 65V130H174V73Q128 51 83 73V126H62Z" fill="${hair}"/>`
       : state.pal.hair==='cloud'
         ? `<path d="M58 78Q48 51 77 44Q91 17 116 34Q145 13 161 37Q192 31 201 58Q211 82 185 91Q156 74 128 86Q95 72 58 78Z" fill="${hair}"/>`
         : `<path d="M61 80Q63 31 126 28Q184 31 197 70Q155 49 79 98Z" fill="${hair}"/>`;
     return `<svg data-console-head="true" viewBox="0 0 256 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(state.pal.name)} low-resolution Console head" shape-rendering="crispEdges">
-      <defs><linearGradient id="consoleHeadFill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".58" stop-color="${shell}"/><stop offset="1" stop-color="#9bd5e3"/></linearGradient></defs>
-      <path d="M128 35Q71 35 67 87V127Q68 166 96 183L96 207H160V183Q188 166 189 127V87Q185 35 128 35Z" fill="url(#consoleHeadFill)" stroke="#173e4c" stroke-width="8"/>
+      <defs><linearGradient id="consoleHeadFill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".58" stop-color="${shell}"/><stop offset="1" stop-color="#c9ced4"/></linearGradient></defs>
+      <path d="M128 35Q71 35 67 87V127Q68 166 96 183L96 207H160V183Q188 166 189 127V87Q185 35 128 35Z" fill="url(#consoleHeadFill)" stroke="#252932" stroke-width="8"/>
       ${consoleHair}
-      <rect x="91" y="91" width="14" height="59" rx="7" fill="${signal}"/><rect x="151" y="91" width="14" height="59" rx="7" fill="${signal}"/>
+      <rect x="93" y="88" width="12" height="58" rx="6" fill="${signal}"/><rect x="151" y="88" width="12" height="58" rx="6" fill="${signal}"/>
       <path d="M80 58V156M90 48H166" fill="none" stroke="#fff" stroke-width="6" opacity=".45"/>
     </svg>`;
   }
@@ -188,16 +194,6 @@
     $('.onboarding-step:not([hidden])')?.scrollTo(0, 0);
   }
 
-  function addSwatch(root, field, index, value) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.style.setProperty('--swatch', value);
-    button.dataset.swatchField = field;
-    button.dataset.swatchIndex = String(index);
-    button.title = `${field} ${index + 1}`;
-    button.addEventListener('click', () => { state.pal[field] = index; syncChoices(); });
-    root.append(button);
-  }
 
   function buildChoices() {
     Object.keys(dispositions).forEach(key => {
@@ -212,7 +208,6 @@
       });
       $('#dispositionChoices').append(button);
     });
-    palettes.hair.forEach((value,index) => addSwatch($('#hairColorChoices'),'hairColor',index,value));
     const hairStyles = {none:'None',swept:'Swept',bob:'Bob',cloud:'Cloud'};
     Object.entries(hairStyles).forEach(([key,label]) => {
       const button = document.createElement('button');
@@ -227,27 +222,45 @@
       button.addEventListener('click', () => { state.pal.outfit = key; syncChoices(); });
       $('#outfitChoices').append(button);
     });
-    setupRgbControl('shell');
-    setupRgbControl('signal');
+    setupHueControl('shell', 187, 80, 92, state.pal.shellColor);
+    setupHueControl('signal', 240, 82, 48, state.pal.signalColor);
+    setupHueControl('hair', 215, 58, 28, state.pal.hairColorValue);
     syncChoices();
   }
 
-  function setupRgbControl(field) {
-    const ids={shell:['shellR','shellG','shellB'],signal:['signalR','signalG','signalB']}[field];
-    const update=()=>{
-      const hex='#'+ids.map(id=>Number($(`#${id}`).value).toString(16).padStart(2,'0')).join('').toUpperCase();
-      state.pal[`${field}Color`]=hex;
-      $(`#${field}ColorOutput`).value=hex;
+  function hslToHex(hue, saturation, lightness) {
+    const s = saturation / 100;
+    const l = lightness / 100;
+    const chroma = (1 - Math.abs(2 * l - 1)) * s;
+    const segment = ((hue % 360) + 360) % 360 / 60;
+    const x = chroma * (1 - Math.abs(segment % 2 - 1));
+    const [r1,g1,b1] = segment < 1 ? [chroma,x,0] : segment < 2 ? [x,chroma,0] : segment < 3 ? [0,chroma,x] : segment < 4 ? [0,x,chroma] : segment < 5 ? [x,0,chroma] : [chroma,0,x];
+    const m = l - chroma / 2;
+    return `#${[r1,g1,b1].map(value => Math.round((value + m) * 255).toString(16).padStart(2,'0')).join('').toUpperCase()}`;
+  }
+
+  function setupHueControl(field, initialHue, saturation, lightness, initialColor) {
+    const input = $(`#${field}Hue`);
+    const output = $(`#${field}ColorOutput`);
+    const applyColor = color => {
+      if (field === 'hair') state.pal.hairColorValue = color;
+      else state.pal[`${field}Color`] = color;
+      if (output) output.value = color.toUpperCase();
       renderCharacterEverywhere();
     };
-    ids.forEach(id=>$(`#${id}`).addEventListener('input',update));
+    input.value = String(initialHue);
+    input.addEventListener('input', () => applyColor(hslToHex(Number(input.value), saturation, lightness)));
+    applyColor(initialColor);
   }
 
   function syncChoices() {
     $$('[data-disposition]').forEach(button => button.classList.toggle('active', button.dataset.disposition === state.pal.disposition));
     $$('[data-hair]').forEach(button => button.classList.toggle('active', button.dataset.hair === state.pal.hair));
     $$('[data-outfit]').forEach(button => button.classList.toggle('active', button.dataset.outfit === state.pal.outfit));
-    ['shell','signal','hairColor'].forEach(field => $$(`[data-swatch-field="${field}"]`).forEach(button => button.classList.toggle('active', Number(button.dataset.swatchIndex) === state.pal[field])));
+    const hasHair = state.pal.hair !== 'none';
+    $('#hairColorField').hidden = !hasHair;
+    $('.design-fields').dataset.hasHair = String(hasHair);
+
     $('#palName').value = state.pal.name;
     renderCharacterEverywhere();
   }
@@ -309,7 +322,7 @@
 
   function drawRoomPreviews() { $$('[data-room-preview]').forEach(canvas => drawRoomPreview(canvas, canvas.dataset.roomPreview)); }
 
-  function roomSceneSvg() {
+  function roomSceneSvg({ includeBuddy = true, includeStatus = true } = {}) {
     const t = roomThemes[state.room];
     const shell=state.pal.shellColor||palettes.shell[state.pal.shell];
     const signal=state.pal.signalColor||palettes.signal[state.pal.signal];
@@ -318,15 +331,14 @@
     const sky = night ? '#172a59' : sunset ? '#ef8d73' : t.sky;
     const overlay = night ? '<rect width="1200" height="650" fill="#132550" opacity=".40"/>' : sunset ? '<rect width="1200" height="650" fill="#e66d58" opacity=".14"/>' : '';
     const activity = state.activity;
-    let palTransform = 'translate(450 115) scale(.78)';
+    let palTransform = 'translate(472 128) scale(.70)';
     let pose = 'standing';
-    if (activity === 'desk') { palTransform = 'translate(540 100) scale(.64)'; pose = 'sitting'; }
-    if (activity === 'bed') { palTransform = 'translate(170 168) scale(.61)'; pose = 'sitting'; }
-    if (activity === 'bookshelf') palTransform = 'translate(795 125) scale(.67)';
-    if (activity === 'window') palTransform = 'translate(430 90) scale(.70)';
+    if (activity === 'desk') { palTransform = 'translate(560 125) scale(.58)'; pose = 'sitting'; }
+    if (activity === 'bed') { palTransform = 'translate(190 190) scale(.55)'; pose = 'sitting'; }
+    if (activity === 'bookshelf') palTransform = 'translate(825 145) scale(.60)';
+    if (activity === 'window') palTransform = 'translate(480 115) scale(.62)';
     const activityLabel = {center:'hanging out',desk:'working at the computer',bed:'sitting on the bed',bookshelf:'looking through the shelf',window:'watching campus outside'}[activity];
-    return `<svg viewBox="0 0 1200 650" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-label="${escapeHtml(t.label)} Home">
-      <defs><linearGradient id="entityFill" x1="0" y1="0" x2=".72" y2="1"><stop stop-color="#fff"/><stop offset=".48" stop-color="${shell}"/><stop offset="1" stop-color="#a8ddea"/></linearGradient><filter id="eyeGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    return `<svg viewBox="0 0 1200 650" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" aria-label="${escapeHtml(t.label)} Home">
       <rect width="1200" height="650" fill="${t.wall}"/>
       <rect y="420" width="1200" height="230" fill="${t.floor}"/>
       ${Array.from({length:15},(_,i)=>`<path d="M${i*90} 420L${i*75-80} 650" stroke="#693f2c" stroke-width="2" opacity=".32"/>`).join('')}
@@ -340,8 +352,8 @@
       <g aria-label="bookshelf"><rect x="885" y="140" width="245" height="365" fill="#765032" stroke="#14244a" stroke-width="9"/>${[220,310,400].map(y=>`<path d="M892 ${y}h230" stroke="#14244a" stroke-width="7"/>`).join('')}${[[910,169,32,'#274e77'],[945,159,24,'#aa5b54'],[976,176,35,'#d4ad4c'],[1020,157,28,'#3e6b5c'],[1060,172,39,'#704c83'],[914,240,46,'#415a84'],[970,250,31,'#b66d45'],[1010,232,38,'#d6b86a'],[1060,245,40,'#3c725f']].map(([x,y,w,c])=>`<rect x="${x}" y="${y}" width="${w}" height="48" fill="${c}" stroke="#14244a" stroke-width="3"/>`).join('')}<circle cx="1020" cy="111" r="42" fill="#4e8a5f" stroke="#14244a" stroke-width="7"/><rect x="986" y="118" width="68" height="34" fill="#b96e45" stroke="#14244a" stroke-width="6"/></g>
       <g aria-label="corkboard"><rect x="725" y="60" width="145" height="120" fill="#a96942" stroke="#14244a" stroke-width="8"/><rect x="738" y="75" width="119" height="89" fill="#c78e5d"/>${[[744,88,'#ffd86b'],[786,105,'#f28b86'],[826,83,'#82d8c4']].map(([x,y,c])=>`<rect x="${x}" y="${y}" width="28" height="36" fill="${c}" transform="rotate(${x%2?3:-4} ${x+14} ${y+18})"/><circle cx="${x+14}" cy="${y+5}" r="4" fill="#14244a"/>`).join('')}</g>
       <g aria-label="rug"><path d="M370 465L826 465L905 630H288Z" fill="${t.rug}" stroke="#14244a" stroke-width="8"/><path d="M392 487H804L855 602H336Z" fill="none" stroke="${t.accent}" stroke-width="5" opacity=".7"/></g>
-      <g transform="${palTransform}">${characterMarkup({expression:'smile',pose})}</g>
-      <g transform="translate(18 18)"><rect width="270" height="50" rx="14" fill="rgba(16,26,51,.86)"/><text x="18" y="22" fill="#6be6d0" font-family="monospace" font-size="13" font-weight="900">HOME</text><text x="18" y="40" fill="#fff" font-family="Arial, sans-serif" font-size="14">${escapeHtml(state.pal.name)} is ${activityLabel}.</text></g>
+      ${includeBuddy ? `<g transform="${palTransform}">${characterMarkup({pose})}</g>` : ''}
+      ${includeStatus ? `<g transform="translate(18 18)"><rect width="270" height="50" rx="14" fill="rgba(16,26,51,.86)"/><text x="18" y="22" fill="#6be6d0" font-family="monospace" font-size="13" font-weight="900">HOME</text><text x="18" y="40" fill="#fff" font-family="Arial, sans-serif" font-size="14">${escapeHtml(state.pal.name)} is ${activityLabel}.</text></g>` : ''}
       ${overlay}
     </svg>`;
   }
@@ -349,15 +361,15 @@
   function updateRoomScene() {
     document.documentElement.dataset.roomTheme = state.room;
     $('#roomScene').innerHTML = roomSceneSvg();
-    $('#dialogueBackground').innerHTML = roomSceneSvg();
+    $('#dialogueBackground').innerHTML = roomSceneSvg({includeBuddy:false,includeStatus:false});
     $('#headerPalState').textContent = ({center:'Relaxing in the room',desk:'Using the computer',bed:'Sitting on the bed',bookshelf:'Browsing the bookshelf',window:'Looking out the window'})[state.activity];
     const hit = $('#roomPalHit');
     const positions = {
-      center:{left:'50%',top:'55%',width:'220px',height:'390px'},
-      desk:{left:'59%',top:'49%',width:'170px',height:'310px'},
-      bed:{left:'28%',top:'56%',width:'160px',height:'280px'},
-      bookshelf:{left:'76%',top:'51%',width:'170px',height:'320px'},
-      window:{left:'50%',top:'48%',width:'180px',height:'330px'}
+      center:{left:'50%',top:'55%',width:'180px',height:'330px'},
+      desk:{left:'59%',top:'51%',width:'145px',height:'270px'},
+      bed:{left:'28%',top:'58%',width:'140px',height:'245px'},
+      bookshelf:{left:'77%',top:'53%',width:'150px',height:'280px'},
+      window:{left:'51%',top:'49%',width:'155px',height:'290px'}
     };
     Object.assign(hit.style, positions[state.activity] || positions.center);
     updateClock();
@@ -393,17 +405,21 @@
     $('#viewHint').textContent = view === 'room' ? 'A close, composed view of the same room state.' : 'Move with WASD or directional keys; click objects or press E to interact.';
     state.actionRing = false;
     $('#roomActionRing').hidden = true;
+    if (view !== 'explorer') stopPlayerMovement();
     if (view === 'room') updateRoomScene();
     else drawWorld();
   }
 
-  const grid = { cols:16, rows:10, tile:60, originX:0, originY:0 };
+  const grid = { cols:16, rows:10 };
   const objects = [
-    {id:'bed',x:.8,y:2.4,w:4.1,h:4,anchor:[5,5.8],label:'Sit on the bed'},
-    {id:'desk',x:5.8,y:1.1,w:5.4,h:3.9,anchor:[8.5,4],label:'Use the computer'},
-    {id:'bookshelf',x:12,y:1.9,w:3.2,h:3.6,anchor:[11,5.4],label:'Browse the bookshelf'},
-    {id:'window',x:6.7,y:.25,w:3.1,h:1.55,anchor:[5.4,3.8],label:'Look out the window'}
+    {id:'bed',x:1,y:3,w:3,h:2.5,anchor:[4,4],label:'Sit on the bed'},
+    {id:'desk',x:6,y:2.5,w:4,h:1.5,anchor:[8,4.5],label:'Use the computer'},
+    {id:'bookshelf',x:13,y:2.2,w:2,h:3,anchor:[12,4],label:'Browse the bookshelf'},
+    {id:'window',x:6,y:.35,w:4,h:1.45,anchor:[8,3.2],label:'Look out the window'}
   ];
+  const heldMoves = new Map();
+  const PLAYER_STEP_MS = 145;
+  let movementFrame = 0;
 
   function playerNearObject() {
     const p = state.player;
@@ -412,23 +428,77 @@
       const d = Math.hypot(p.x-object.anchor[0],p.y-object.anchor[1]);
       if (d < distance) { distance=d; best=object.id; }
     });
-    return distance <= 1.5 ? best : null;
+    return distance <= 1.25 ? best : null;
   }
 
   function isBlocked(x,y) {
-    if (x < 1 || x > 14 || y < 2 || y > 8.5) return true;
-    if (x < 5 && y < 6.1) return true;
-    if (x > 11.2 && y < 5.3) return true;
-    if (x > 5.5 && x < 11.3 && y < 3.8) return true;
-    return false;
+    if (x < 1 || x > 14 || y < 3 || y > 8) return true;
+    return objects.some(object => object.id !== 'window' && x >= Math.floor(object.x) && x <= Math.ceil(object.x + object.w) - 1 && y >= Math.floor(object.y) && y <= Math.ceil(object.y + object.h) - 1);
+  }
+
+  function heldMove() {
+    return [...heldMoves.values()].at(-1) || null;
+  }
+
+  function scheduleMovementFrame() {
+    if (!movementFrame) movementFrame = requestAnimationFrame(animatePlayerMovement);
+  }
+
+  function animatePlayerMovement(now) {
+    movementFrame = 0;
+    const movement = state.player.movement;
+    if (movement) {
+      const progress = clamp((now - movement.startedAt) / PLAYER_STEP_MS, 0, 1);
+      state.player.displayX = movement.fromX + (movement.toX - movement.fromX) * progress;
+      state.player.displayY = movement.fromY + (movement.toY - movement.fromY) * progress;
+      drawWorld();
+      if (progress >= 1) {
+        state.player.displayX = state.player.x;
+        state.player.displayY = state.player.y;
+        state.player.movement = null;
+        const next = heldMove();
+        if (next) movePlayer(next.dx,next.dy);
+      }
+    }
+    if (state.player.movement) scheduleMovementFrame();
   }
 
   function movePlayer(dx,dy) {
-    if (state.view !== 'explorer') return;
-    const nx = clamp(state.player.x + dx,1,14), ny = clamp(state.player.y + dy,2,8.5);
-    if (!isBlocked(nx,ny)) { state.player.x=nx; state.player.y=ny; state.player.step=(state.player.step+1)%2; }
-    state.player.dir = dx<0?'left':dx>0?'right':dy<0?'up':'down';
-    drawWorld();
+    if (state.view !== 'explorer' || state.player.movement) return false;
+    const stepX = Math.sign(dx), stepY = Math.sign(dy);
+    const nx = state.player.x + stepX, ny = state.player.y + stepY;
+    state.player.dir = stepX<0?'left':stepX>0?'right':stepY<0?'up':'down';
+    if (isBlocked(nx,ny)) { drawWorld(); return false; }
+    state.player.movement = {
+      fromX: state.player.displayX,
+      fromY: state.player.displayY,
+      toX: nx,
+      toY: ny,
+      startedAt: performance.now()
+    };
+    state.player.x = nx;
+    state.player.y = ny;
+    state.player.step = (state.player.step + 1) % 2;
+    scheduleMovementFrame();
+    return true;
+  }
+
+  function holdPlayerMove(key,move) {
+    if (heldMoves.has(key)) return;
+    heldMoves.set(key,move);
+    if (!state.player.movement) movePlayer(move.dx,move.dy);
+  }
+
+  function releasePlayerMove(key) {
+    heldMoves.delete(key);
+  }
+
+  function stopPlayerMovement() {
+    heldMoves.clear();
+  }
+
+  function setPlayerPosition(x,y) {
+    state.player.x=x;state.player.y=y;state.player.displayX=x;state.player.displayY=y;state.player.movement=null;
   }
 
   function interactObject(id) {
@@ -445,17 +515,17 @@
   function interactWorldAtPointer(event) {
     const canvas = $('#worldCanvas');
     const rect = canvas.getBoundingClientRect();
-    const unit = Math.max(rect.width/16,rect.height/10);
-    const offsetX=clamp(rect.width/2-state.player.x*unit,rect.width-unit*16,0);
-    const offsetY=clamp(rect.height/2-state.player.y*unit,rect.height-unit*10,0);
+    const unit = Math.min(rect.width/grid.cols,rect.height/grid.rows);
+    const offsetX=(rect.width-unit*grid.cols)/2;
+    const offsetY=(rect.height-unit*grid.rows)/2;
     const x = (event.clientX-rect.left-offsetX)/unit, y = (event.clientY-rect.top-offsetY)/unit;
     const object = objects.find(item => x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h);
     interactObject(object?.id || null);
   }
 
-  function drawPixelPal(ctx,x,y,scale=1) {
+  function drawPixelPal(ctx,x,y,tile) {
     const shell=state.pal.shellColor || palettes.shell[state.pal.shell],signal=state.pal.signalColor || palettes.signal[state.pal.signal];
-    const px=4*scale;
+    const px=tile/22;
     ctx.save();ctx.translate(x,y);ctx.imageSmoothingEnabled=false;
     ctx.fillStyle='rgba(16,26,51,.18)';ctx.fillRect(-5*px,9*px,10*px,2*px);
     ctx.fillStyle=shell;
@@ -467,12 +537,11 @@
       ctx.fillRect(-4*px,-2*px,8*px,7*px);ctx.fillRect(-5*px,0,1*px,4*px);ctx.fillRect(4*px,0,1*px,4*px);
     }
     if(state.pal.hair!=='none') {
-      ctx.fillStyle=palettes.hair[state.pal.hairColor];
+      ctx.fillStyle=state.pal.hairColorValue || palettes.hair[state.pal.hairColor];
       ctx.fillRect(-5*px,-10*px,10*px,3*px);ctx.fillRect(-4*px,-8*px,2*px,2*px);
       if(state.pal.hair==='bob') {ctx.fillRect(-5*px,-8*px,1*px,5*px);ctx.fillRect(4*px,-8*px,1*px,5*px);}
     }
-    ctx.fillStyle=signal;ctx.fillRect(-2.5*px,-7*px,1*px,3*px);ctx.fillRect(1.5*px,-7*px,1*px,3*px);
-    ctx.fillStyle='rgba(255,255,255,.25)';ctx.fillRect(-3*px,-9*px,1*px,11*px);
+    ctx.fillStyle=signal;ctx.fillRect(-3*px,-8*px,2*px,4*px);ctx.fillRect(1*px,-8*px,2*px,4*px);
     ctx.restore();
   }
 
@@ -481,36 +550,32 @@
     const rect=canvas.getBoundingClientRect(),pixelRatio=Math.min(window.devicePixelRatio||1,2);
     if(rect.width>0&&rect.height>0){const nextWidth=Math.round(rect.width*pixelRatio),nextHeight=Math.round(rect.height*pixelRatio);if(canvas.width!==nextWidth||canvas.height!==nextHeight){canvas.width=nextWidth;canvas.height=nextHeight;}}
     const canvasWidth=canvas.width,canvasHeight=canvas.height,t=roomThemes[state.room];
-    const unit=Math.max(canvasWidth/16,canvasHeight/10),w=unit*16,h=unit*10,sx=unit,sy=unit;
-    const offsetX=clamp(canvasWidth/2-state.player.x*unit,canvasWidth-w,0);
-    const offsetY=clamp(canvasHeight/2-state.player.y*unit,canvasHeight-h,0);
+    const unit=Math.min(canvasWidth/grid.cols,canvasHeight/grid.rows),w=unit*grid.cols,h=unit*grid.rows,sx=unit,sy=unit;
+    const offsetX=(canvasWidth-w)/2,offsetY=(canvasHeight-h)/2;
     ctx.clearRect(0,0,canvasWidth,canvasHeight);ctx.imageSmoothingEnabled=false;
-    ctx.fillStyle='#111d38';ctx.fillRect(0,0,canvasWidth,canvasHeight);
+    ctx.fillStyle='#d7e5e6';ctx.fillRect(0,0,canvasWidth,canvasHeight);
     ctx.save();ctx.translate(offsetX,offsetY);
-    ctx.fillStyle=t.wall;ctx.fillRect(0,0,w,sy*2.2);
-    ctx.fillStyle=t.floor;ctx.fillRect(0,sy*2.2,w,h-sy*2.2);
-    ctx.strokeStyle='rgba(80,44,31,.30)';ctx.lineWidth=2;
-    for(let y=2.2;y<=10;y+=.7){ctx.beginPath();ctx.moveTo(0,y*sy);ctx.lineTo(w,y*sy);ctx.stroke();}
-    for(let x=0;x<=16;x++){ctx.beginPath();ctx.moveTo(x*sx,sy*2.2);ctx.lineTo((x-2)*sx,h);ctx.stroke();}
-    // Window and corkboard on wall.
-    ctx.fillStyle=state.time==='night'?'#1a3267':state.time==='sunset'?'#ed9277':t.sky;ctx.fillRect(sx*6.7,sy*.25,sx*3.1,sy*1.55);ctx.strokeStyle='#14244a';ctx.lineWidth=7;ctx.strokeRect(sx*6.7,sy*.25,sx*3.1,sy*1.55);ctx.beginPath();ctx.moveTo(sx*8.25,sy*.25);ctx.lineTo(sx*8.25,sy*1.8);ctx.stroke();
-    ctx.fillStyle='#b6794a';ctx.fillRect(sx*12.3,sy*.35,sx*2.6,sy*1.2);ctx.strokeRect(sx*12.3,sy*.35,sx*2.6,sy*1.2);
-    // Bed.
-    ctx.fillStyle='#75482f';ctx.fillRect(sx*.8,sy*2.4,sx*4.1,sy*4.0);ctx.strokeRect(sx*.8,sy*2.4,sx*4.1,sy*4.0);ctx.fillStyle=t.bedding;ctx.fillRect(sx*1.05,sy*2.55,sx*3.6,sy*3.35);ctx.strokeRect(sx*1.05,sy*2.55,sx*3.6,sy*3.35);ctx.fillStyle='#fff5df';ctx.fillRect(sx*1.2,sy*2.7,sx*2.1,sy*.85);ctx.strokeRect(sx*1.2,sy*2.7,sx*2.1,sy*.85);
-    // Desk.
-    ctx.fillStyle='#85532f';ctx.fillRect(sx*5.8,sy*2.4,sx*5.4,sy*.8);ctx.strokeRect(sx*5.8,sy*2.4,sx*5.4,sy*.8);ctx.fillRect(sx*6.1,sy*3.1,sx*.45,sy*1.9);ctx.fillRect(sx*10.5,sy*3.1,sx*.45,sy*1.9);ctx.fillStyle='#233c66';ctx.fillRect(sx*7.4,sy*1.1,sx*2.0,sy*1.25);ctx.strokeRect(sx*7.4,sy*1.1,sx*2.0,sy*1.25);ctx.fillStyle='#54b5e8';ctx.fillRect(sx*7.65,sy*1.35,sx*1.5,sy*.75);
-    // Shelf.
-    ctx.fillStyle='#705038';ctx.fillRect(sx*12.0,sy*1.9,sx*3.2,sy*3.6);ctx.strokeRect(sx*12.0,sy*1.9,sx*3.2,sy*3.6);for(let r=1;r<4;r++){ctx.beginPath();ctx.moveTo(sx*12,sy*(1.9+r*.9));ctx.lineTo(sx*15.2,sy*(1.9+r*.9));ctx.stroke();}
-    // Rug.
-    ctx.fillStyle=t.rug;ctx.fillRect(sx*5.8,sy*5.0,sx*5.1,sy*3.4);ctx.strokeRect(sx*5.8,sy*5.0,sx*5.1,sy*3.4);ctx.strokeStyle=t.accent;ctx.lineWidth=4;ctx.strokeRect(sx*6.1,sy*5.3,sx*4.5,sy*2.8);
-    // Door/threshold.
-    ctx.fillStyle='#24314b';ctx.fillRect(sx*6.8,sy*9.1,sx*2.4,sy*.9);
-    // Buddy.
-    drawPixelPal(ctx,state.player.x*sx,state.player.y*sy,unit/48);
-    // Night overlay.
-    if(state.time==='night'){ctx.fillStyle='rgba(15,31,67,.35)';ctx.fillRect(0,0,w,h);}
+    ctx.fillStyle=t.wall;ctx.fillRect(0,0,w,sy*2.5);
+    ctx.fillStyle=t.floor;ctx.fillRect(0,sy*2.5,w,h-sy*2.5);
+    ctx.strokeStyle='rgba(20,36,74,.16)';ctx.lineWidth=Math.max(1,pixelRatio);
+    for(let x=0;x<=grid.cols;x++){ctx.beginPath();ctx.moveTo(x*sx,0);ctx.lineTo(x*sx,h);ctx.stroke();}
+    for(let y=0;y<=grid.rows;y++){ctx.beginPath();ctx.moveTo(0,y*sy);ctx.lineTo(w,y*sy);ctx.stroke();}
+    // Wall fixtures: each measurement is expressed in character-sized grid tiles.
+    ctx.fillStyle=state.time==='night'?'#1a3267':state.time==='sunset'?'#ed9277':t.sky;ctx.fillRect(sx*6,sy*.35,sx*4,sy*1.45);ctx.strokeStyle='#14244a';ctx.lineWidth=4*pixelRatio;ctx.strokeRect(sx*6,sy*.35,sx*4,sy*1.45);ctx.beginPath();ctx.moveTo(sx*8,sy*.35);ctx.lineTo(sx*8,sy*1.8);ctx.stroke();
+    ctx.fillStyle='#b6794a';ctx.fillRect(sx*12,sy*.45,sx*2.5,sy*1.2);ctx.strokeRect(sx*12,sy*.45,sx*2.5,sy*1.2);
+    // Bed: three tiles wide, two-and-a-half tiles deep.
+    ctx.fillStyle='#75482f';ctx.fillRect(sx*1,sy*3,sx*3,sy*2.5);ctx.strokeRect(sx*1,sy*3,sx*3,sy*2.5);ctx.fillStyle=t.bedding;ctx.fillRect(sx*1.15,sy*3.15,sx*2.7,sy*2.15);ctx.strokeRect(sx*1.15,sy*3.15,sx*2.7,sy*2.15);ctx.fillStyle='#fff5df';ctx.fillRect(sx*1.3,sy*3.3,sx*1.5,sy*.65);ctx.strokeRect(sx*1.3,sy*3.3,sx*1.5,sy*.65);
+    // Desk: four tiles wide and one-and-a-half deep.
+    ctx.fillStyle='#85532f';ctx.fillRect(sx*6,sy*2.5,sx*4,sy*1.5);ctx.strokeRect(sx*6,sy*2.5,sx*4,sy*1.5);ctx.fillStyle='#233c66';ctx.fillRect(sx*7.2,sy*1.55,sx*1.6,sy*.9);ctx.strokeRect(sx*7.2,sy*1.55,sx*1.6,sy*.9);ctx.fillStyle='#54b5e8';ctx.fillRect(sx*7.4,sy*1.75,sx*1.2,sy*.5);
+    // Bookshelf: two tiles wide and three tiles tall.
+    ctx.fillStyle='#705038';ctx.fillRect(sx*13,sy*2.2,sx*2,sy*3);ctx.strokeRect(sx*13,sy*2.2,sx*2,sy*3);for(let r=1;r<3;r++){ctx.beginPath();ctx.moveTo(sx*13,sy*(2.2+r));ctx.lineTo(sx*15,sy*(2.2+r));ctx.stroke();}
+    // Rug and exit remain walkable.
+    ctx.fillStyle=t.rug;ctx.fillRect(sx*6,sy*5,sx*4,sy*3);ctx.strokeRect(sx*6,sy*5,sx*4,sy*3);ctx.strokeStyle=t.accent;ctx.lineWidth=3*pixelRatio;ctx.strokeRect(sx*6.25,sy*5.25,sx*3.5,sy*2.5);
+    ctx.fillStyle='#24314b';ctx.fillRect(sx*7,sy*9,sx*2,sy);
+    const drawX=state.player.displayX??state.player.x,drawY=state.player.displayY??state.player.y;
+    drawPixelPal(ctx,(drawX+.5)*sx,(drawY+.55)*sy,unit);
+    if(state.time==='night'){ctx.fillStyle='rgba(15,31,67,.28)';ctx.fillRect(0,0,w,h);}
     ctx.restore();
-    // Prompt.
     const near=playerNearObject();
     $('#worldPrompt').hidden=!near;
     if(near) $('#worldPromptText').textContent=objects.find(o=>o.id===near)?.label||'Interact';
@@ -518,10 +583,11 @@
   }
 
   function drawMiniMap() {
-    const c=$('#miniMap'),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#111f38';ctx.fillRect(0,0,c.width,c.height);ctx.strokeStyle='#e4bd67';ctx.lineWidth=3;ctx.strokeRect(8,8,c.width-16,c.height-16);ctx.strokeRect(14,15,32,35);ctx.strokeRect(54,14,40,21);ctx.strokeRect(101,14,20,35);ctx.fillStyle='#5cf29b';ctx.beginPath();ctx.arc(8+(state.player.x/16)*(c.width-16),8+(state.player.y/10)*(c.height-16),5,0,Math.PI*2);ctx.fill();
+    const c=$('#miniMap'),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#111f38';ctx.fillRect(0,0,c.width,c.height);ctx.strokeStyle='#e4bd67';ctx.lineWidth=3;ctx.strokeRect(8,8,c.width-16,c.height-16);ctx.strokeRect(14,15,32,35);ctx.strokeRect(54,14,40,21);ctx.strokeRect(101,14,20,35);ctx.fillStyle='#5cf29b';ctx.beginPath();ctx.arc(8+((state.player.displayX??state.player.x)/16)*(c.width-16),8+((state.player.displayY??state.player.y)/10)*(c.height-16),5,0,Math.PI*2);ctx.fill();
   }
 
   function showDialogue(kind='talk') {
+    $('#toast').hidden = true;
     const lines = {
       talk:`Hey. I am glad you are here. I was ${state.activity==='center'?'hanging out':state.activity==='desk'?'checking the computer':state.activity==='bed'?'sitting on the bed':state.activity==='bookshelf'?'looking through our shelf':'watching campus outside'}. What should we do first?`,
       check:`I am doing all right. The room state is synchronized now, so I will still be here when you switch views.`,
@@ -564,6 +630,7 @@
   }
 
   function openConsole() {
+    $('#toast').hidden=true;
     $('#consoleMode').hidden=false;
     state.consoleSelected=false;state.consoleTool=null;
     $('#consoleActions').hidden=true;$('#consoleToolScreen').hidden=true;
@@ -692,11 +759,21 @@
     $('#dialogueClose').addEventListener('click',closeDialogue);$('#dialogueBackdrop').addEventListener('click',closeDialogue);
     $('.dialogue-choices').addEventListener('click',event=>{const choice=event.target.dataset.dialogueChoice;if(!choice)return;if(choice==='later')closeDialogue();else if(choice==='agenda')$('#dialogueText').textContent='Your main item is the team demo. I would start with the synchronized room-view explanation.';else $('#dialogueText').textContent=`I like ${roomThemes[state.room].label}. The important part is that this background matches Explorer Mode.`;});
     $('#palPortraitButton').addEventListener('click',showQuickChat);$$('[data-quick-close]').forEach(button=>button.addEventListener('click',()=>$('#quickChat').hidden=true));
-    $('#metaButton').addEventListener('click',()=>$('#metaBar').hidden=!$('#metaBar').hidden);$('#metaBar').addEventListener('click',event=>{if(event.target.dataset.time){state.time=event.target.dataset.time;updateRoomScene();drawWorld();}if(event.target.dataset.activity){state.activity=event.target.dataset.activity;const map={center:[8,7],desk:[8,4],bed:[5,6],bookshelf:[12,5]};if(map[state.activity]){state.player.x=map[state.activity][0];state.player.y=map[state.activity][1];}updateRoomScene();drawWorld();}if(event.target.hasAttribute('data-meta-close'))$('#metaBar').hidden=true;});
+    $('#metaButton').addEventListener('click',()=>$('#metaBar').hidden=!$('#metaBar').hidden);$('#metaBar').addEventListener('click',event=>{if(event.target.dataset.time){state.time=event.target.dataset.time;updateRoomScene();drawWorld();}if(event.target.dataset.activity){state.activity=event.target.dataset.activity;const map={center:[8,7],desk:[8,4],bed:[5,6],bookshelf:[12,5]};if(map[state.activity])setPlayerPosition(map[state.activity][0],map[state.activity][1]);updateRoomScene();drawWorld();}if(event.target.hasAttribute('data-meta-close'))$('#metaBar').hidden=true;});
     $$('.game-dock button').forEach(button=>button.addEventListener('click',()=>openPanel(button.dataset.panel)));
     $$('[data-panel-close]').forEach(button=>button.addEventListener('click',closePanel));
     $('#consoleButton').addEventListener('click',openConsole);$('#consolePower').addEventListener('click',closeConsole);$('#consolePal').addEventListener('click',toggleConsoleActions);$('#consoleActions').addEventListener('click',event=>{const tool=event.target.dataset.consoleTool;if(tool)openConsoleTool(tool);});$('#consoleBack').addEventListener('click',closeConsoleTool);$('#consoleB').addEventListener('click',()=>state.consoleTool?closeConsoleTool():($('#consoleActions').hidden=true,state.consoleSelected=false));$('#consoleA').addEventListener('click',()=>state.consoleTool?null:toggleConsoleActions());$('#consoleMic').addEventListener('click',()=>showConsoleRemark('I heard you. Voice recognition is represented as a local demo action.'));$('#consoleRemark').addEventListener('click',()=>$('#consoleRemark').hidden=true);$('#consoleToolContent').addEventListener('click',handleConsoleDynamicClick);
-    $$('.touch-controls [data-move]').forEach(button=>button.addEventListener('click',()=>{const d=button.dataset.move;movePlayer(d==='left'?-1:d==='right'?1:0,d==='up'?-1:d==='down'?1:0);}));$('[data-interact]').addEventListener('click',interactWorld);
+    $$('.touch-controls [data-move]').forEach(button=>{
+      const direction=button.dataset.move;
+      const move={dx:direction==='left'?-1:direction==='right'?1:0,dy:direction==='up'?-1:direction==='down'?1:0};
+      const pointerKey=event=>`pointer-${event.pointerId}`;
+      button.addEventListener('pointerdown',event=>{event.preventDefault();button.setPointerCapture?.(event.pointerId);holdPlayerMove(pointerKey(event),move);});
+      button.addEventListener('pointerup',event=>releasePlayerMove(pointerKey(event)));
+      button.addEventListener('pointercancel',event=>releasePlayerMove(pointerKey(event)));
+      button.addEventListener('lostpointercapture',event=>releasePlayerMove(pointerKey(event)));
+      button.addEventListener('click',event=>{if(event.detail===0)movePlayer(move.dx,move.dy);});
+    });
+    $('[data-interact]').addEventListener('click',interactWorld);
     $('#worldPrompt').addEventListener('click',interactWorld);$('#worldCanvas').addEventListener('click',interactWorldAtPointer);
     window.addEventListener('resize',()=>{if(state.view==='explorer'&&!$('#game').hidden)drawWorld();});
     document.addEventListener('keydown',event=>{
@@ -710,8 +787,13 @@
       if(!$('#consoleMode').hidden){if(event.key.toLowerCase()==='b')state.consoleTool?closeConsoleTool():($('#consoleActions').hidden=true,state.consoleSelected=false);return;}
       if(!$('#dialogueMode').hidden||!$('#quickChat').hidden)return;
       if(state.view!=='explorer')return;
-      const key=event.key.toLowerCase();if(['arrowleft','a'].includes(key))movePlayer(-.5,0);if(['arrowright','d'].includes(key))movePlayer(.5,0);if(['arrowup','w'].includes(key))movePlayer(0,-.5);if(['arrowdown','s'].includes(key))movePlayer(0,.5);if(['e','enter',' '].includes(key)){event.preventDefault();interactWorld();}
+      const key=event.key.toLowerCase();
+      const moves={arrowleft:{dx:-1,dy:0},a:{dx:-1,dy:0},arrowright:{dx:1,dy:0},d:{dx:1,dy:0},arrowup:{dx:0,dy:-1},w:{dx:0,dy:-1},arrowdown:{dx:0,dy:1},s:{dx:0,dy:1}};
+      if(moves[key]){event.preventDefault();holdPlayerMove(key,moves[key]);return;}
+      if(['e','enter',' '].includes(key)){event.preventDefault();interactWorld();}
     });
+    document.addEventListener('keyup',event=>releasePlayerMove(event.key.toLowerCase()));
+    window.addEventListener('blur',stopPlayerMovement);
   }
 
   buildChoices();

@@ -26,7 +26,7 @@ Open `index.html` in a modern browser. No server, build step, account, or extern
 2. Customize the Buddy’s initial form and disposition.
    - Drag or swipe horizontally across the preview to rotate through four 90-degree views.
    - Use the left/right preview buttons or Left/Right Arrow keys for the same rotation.
-   - Keep the pale electronic blank canvas untouched or use RGB body/eye controls and add fitted hair and complete clothing.
+   - Keep the pale blank canvas untouched or use compact body, eye, and hair hue controls with optional starter clothing.
 3. Select **Fresh Daytime Dorm**, **Cozy Warm Dorm**, or **Gamer Dorm** in the final onboarding step, then initialize directly into play.
 4. Switch between Home and Explorer Mode.
 5. Select the Buddy for Talk, Check in, Plan, and React actions.
