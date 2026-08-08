@@ -12,7 +12,8 @@ The repository intentionally keeps each subsystem small so humans and coding age
 - `styles/game.css` — Home, Explorer, navigation, and responsive game layout.
 - `styles/overlays.css` — dialogue, panels, toast, and Console Mode.
 - `src/state.js` — canonical state factory and pure utility functions.
-- `src/character.js` — Buddy SVG renderer.
+- `src/character.js` — asset-driven Buddy turnaround renderer.
+- `assets/buddy/turnaround/` — eight-frame body, line, eye, hair, and outfit sprite masks.
 - `src/room.js` — canonical room/theme/object model and Home rendering.
 - `src/explorer.js` — Explorer collision, movement, and canvas rendering.
 - `src/ui.js` — reusable overlay, panel, and Console content helpers.
@@ -28,13 +29,17 @@ Open `index.html` in a modern browser.
 ## Demo path
 
 1. Start the sample profile or enter a university email.
-2. Customize the Buddy and inspect all four views.
+2. Customize the Buddy and inspect all eight authored turnaround views.
 3. Choose a starting dorm and initialize.
 4. Switch between Home and Explorer Mode.
 5. Select the Buddy for dialogue or use the bottom application dock.
 6. Open Console Mode for brief, wallet, calculator, focus, and talk demos.
 
 Explorer Mode supports WASD/arrow keys, E/Enter/Space to interact, pointer interaction, and labeled touch controls.
+
+## Character asset contract
+
+The Buddy anatomy is not defined by runtime SVG path coordinates. The supplied turnaround is converted into eight aligned sprite-mask frames: front, both quarter-fronts, both sides, both quarter-rears, and rear. Body color, eye color, hair, hair color, and clothing are layered over those same eight silhouettes. New selectable hair or clothing styles should ship with all eight frames before they are exposed in onboarding.
 
 ## Verify
 
@@ -52,6 +57,7 @@ node --check src/ui.js
 
 - Home and Explorer consume one canonical room-object model.
 - Buddy appearance has one canonical state representation.
+- Buddy onboarding rotation uses the eight authored turnaround views in 45-degree steps.
 - Responsive layouts must not introduce horizontal page scrolling.
 - Every pointer interaction that matters has a keyboard or button alternative.
 - Rendering modules stay free of application event binding.

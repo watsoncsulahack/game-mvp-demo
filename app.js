@@ -10,7 +10,7 @@
   const modal = UI.createModalManager();
   const $ = (selector, root=document) => root.querySelector(selector);
   const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
-  const previewLabels = {0:'Front',90:'Right side',180:'Back',270:'Left side'};
+  const previewLabels = Object.fromEntries(Character.TURNAROUND_VIEWS.map(view => [view.angle,view.label]));
   let toastTimer = null;
   let focusTimer = null;
 
@@ -38,10 +38,10 @@
 
   function renderPreview() {
     const angle = Core.normalizeAngle(state.previewAngle);
-    const label = previewLabels[angle];
+    const view = Character.viewForAngle(angle);
     $('#fullArtPreview').innerHTML = Character.renderCharacter(state.buddy,{angle});
-    $('#rotationStatus').textContent = `${label} · ${angle}°`;
-    $('#artViewport').setAttribute('aria-label', `Rotate Buddy. ${label} view. Drag horizontally or use Left and Right Arrow keys.`);
+    $('#rotationStatus').textContent = `${view.label} · ${view.index+1}/8`;
+    $('#artViewport').setAttribute('aria-label', `Rotate Buddy. ${view.label} view, ${view.index+1} of 8. Drag horizontally or use Left and Right Arrow keys.`);
   }
 
   function renderBuddyEverywhere() {
@@ -176,11 +176,11 @@
     let dragging=false,startX=0,startAngle=0,pointerId=null; const viewport=$('#artViewport');
     const rotate=delta=>{state.previewAngle=Core.normalizeAngle(state.previewAngle+delta);renderPreview();};
     viewport.addEventListener('pointerdown',event=>{if(event.target.closest('button'))return;dragging=true;startX=event.clientX;startAngle=state.previewAngle;pointerId=event.pointerId;viewport.setPointerCapture?.(pointerId);});
-    viewport.addEventListener('pointermove',event=>{if(!dragging)return;state.previewAngle=Core.normalizeAngle(startAngle-Math.round((event.clientX-startX)/52)*90);renderPreview();});
+    viewport.addEventListener('pointermove',event=>{if(!dragging)return;state.previewAngle=Core.normalizeAngle(startAngle-Math.round((event.clientX-startX)/46)*45);renderPreview();});
     const finish=()=>{dragging=false;if(pointerId!==null&&viewport.hasPointerCapture?.(pointerId))viewport.releasePointerCapture(pointerId);pointerId=null;};
     viewport.addEventListener('pointerup',finish); viewport.addEventListener('pointercancel',finish);
-    viewport.addEventListener('keydown',event=>{if(event.key==='ArrowLeft'){event.preventDefault();rotate(-90);}if(event.key==='ArrowRight'){event.preventDefault();rotate(90);}});
-    $('#rotateBuddyLeft').addEventListener('click',()=>rotate(-90)); $('#rotateBuddyRight').addEventListener('click',()=>rotate(90));
+    viewport.addEventListener('keydown',event=>{if(event.key==='ArrowLeft'){event.preventDefault();rotate(-45);}if(event.key==='ArrowRight'){event.preventDefault();rotate(45);}});
+    $('#rotateBuddyLeft').addEventListener('click',()=>rotate(-45)); $('#rotateBuddyRight').addEventListener('click',()=>rotate(45));
   }
 
   function setupGame() {

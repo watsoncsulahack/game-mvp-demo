@@ -1,34 +1,56 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
-import { loadBrowserScripts } from './helpers.mjs';
+import { loadBrowserScripts, root } from './helpers.mjs';
 
 const context = loadBrowserScripts(['src/state.js','src/character.js']);
 const state = context.CampusBuddyCore.createState();
-const render = angle => context.CampusBuddyCharacter.renderCharacter(state.buddy,{angle});
+const character = context.CampusBuddyCharacter;
+const angles = [0,45,90,135,180,225,270,315];
 
-test('turntable renders four distinct views without undefined output', () => {
-  const renders = [0,90,180,270].map(render);
-  assert.equal(new Set(renders).size,4);
-  for (const svg of renders) {
+test('turnaround exposes exactly eight authored views', () => {
+  assert.equal(character.TURNAROUND_VIEWS.length,8);
+  assert.equal(Array.from(character.TURNAROUND_VIEWS,view=>view.angle).join(','),angles.join(','));
+  assert.equal(new Set(Array.from(character.TURNAROUND_VIEWS,view=>view.slug)).size,8);
+});
+
+test('all eight views render from the turnaround atlas rather than anatomy paths', () => {
+  const renders = angles.map(angle=>character.renderCharacter(state.buddy,{angle}));
+  assert.equal(new Set(renders).size,8);
+  for (const [index,svg] of renders.entries()) {
     assert.match(svg,/^<svg/);
-    assert.match(svg,/data-base-body="true"/);
+    assert.match(svg,new RegExp(`data-buddy-angle="${angles[index]}"`));
+    assert.match(svg,/layers-atlas\.png/);
+    assert.doesNotMatch(svg,/<path\b/);
     assert.doesNotMatch(svg,/undefined|NaN/);
   }
 });
 
-test('front, side, and rear views expose the intended eye counts', () => {
-  assert.equal((render(0).match(/data-eye="true"/g)||[]).length,1,'front eye path contains both vertical eyes');
-  assert.match(render(0),/M132 78V116M188 78V116/);
-  assert.equal((render(90).match(/data-eye="true"/g)||[]).length,1);
-  assert.equal((render(180).match(/data-eye="true"/g)||[]).length,0);
-  assert.match(render(270),/scale\(-1 1\)/);
+test('body, eye, hair, and clothing customization persist at every angle', () => {
+  state.buddy.appearance.bodyColor='#DDEEFF';
+  state.buddy.appearance.eyeColor='#2244AA';
+  state.buddy.appearance.hairStyle='bob';
+  state.buddy.appearance.hairColor='#775599';
+  state.buddy.appearance.outfit='hoodie';
+  for (const angle of angles) {
+    const svg=character.renderCharacter(state.buddy,{angle});
+    assert.match(svg,/#DDEEFF/);
+    assert.match(svg,/#2244AA/);
+    assert.match(svg,/#775599/);
+    assert.match(svg,/layers-atlas\.png/);
+    assert.match(svg,/buddy-\d+-\d+-full-bob-hoodie-hair/);
+    assert.match(svg,/buddy-\d+-\d+-full-bob-hoodie-outfit/);
+  }
 });
 
-test('optional customization layers over the same base body', () => {
-  state.buddy.appearance.hairStyle='swept';
-  state.buddy.appearance.outfit='hoodie';
-  const svg=render(0);
-  assert.match(svg,/data-base-body="true"/);
-  assert.match(svg,/data-hair="true"/);
-  assert.match(svg,/data-outfit="true"/);
+test('every selectable appearance layer has an atlas row', () => {
+  const required=['body','line','eyes',
+    ...['swept','bob','cloud'].flatMap(style=>[`hair-${style}`,`hair-${style}-line`]),
+    ...['tee','hoodie','jacket'].flatMap(style=>[`outfit-${style}`,`outfit-${style}-line`])];
+  assert.equal(Object.keys(character.LAYER_ROWS).length,required.length);
+  for (const layer of required) assert.equal(typeof character.LAYER_ROWS[layer],'number',`${layer} should have an atlas row`);
+  const atlas=path.join(root,'assets/buddy/turnaround/layers-atlas.png');
+  assert.ok(fs.existsSync(atlas));
+  assert.ok(fs.statSync(atlas).size>0);
 });

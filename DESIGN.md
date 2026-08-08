@@ -16,11 +16,16 @@ The three-step flow is **Campus ID**, **Design Buddy**, then **Review**.
 - Desktop keeps a persistent Buddy stage beside the active form.
 - Portrait layouts place the stage above an independently scrolling form.
 - Back/Continue controls remain reachable.
-- The Buddy can be inspected in four 90-degree views by horizontal drag/swipe, arrow keys, or explicit rotate buttons.
+- The Buddy is inspected through eight authored turnaround views at 45-degree increments: front, left quarter front, left side, left quarter rear, rear, right quarter rear, right side, and right quarter front.
+- Drag/swipe, arrow keys, and explicit rotate buttons all advance one authored view at a time.
 
 ## Buddy character
 
-The default Buddy is a cohesive customizable blank canvas: one pale humanoid silhouette, a heavy near-black outline, two vertical eyes in front view, one eye in side views, and no eyes in rear view. Hair, body color, eye color, clothing, and disposition are optional layers over that base.
+The supplied eight-view turnaround is the source of truth for anatomy and proportions. Runtime code must not reconstruct the body from hand-authored SVG path coordinates. The renderer composes aligned sprite-mask layers for the canonical body, line art, eyes, hair, and clothing.
+
+Body color, eye color, hair style/color, clothing, and disposition remain onboarding customizations. Every selectable visual layer must have a valid representation for all eight turnaround views before it is exposed in the UI.
+
+The current hair and clothing layers are starter assets that follow the eight-view contract. Future production model-sheet assets can replace those masks without changing the renderer or onboarding interaction model.
 
 ## Home and Explorer
 
@@ -44,11 +49,14 @@ Console Mode is a handheld-style way to interact with the same customized Buddy.
 - Favor concise, playful copy over technical product language.
 - Use the yellow active state consistently for steps and selected chips.
 - Keep state, rendering, and event binding in separate modules.
+- Treat the turnaround assets as canonical geometry.
 
 ## Don'ts
 
 - Do not turn the Buddy stage into a dense sci-fi scan screen.
 - Do not replace the simple silhouette with a segmented robot or realistic human.
+- Do not redraw Buddy anatomy with runtime SVG path strings.
+- Do not ship a selectable customization that is missing any turnaround angle.
 - Do not duplicate room coordinates in multiple renderers.
 - Do not add historical CSS override passes; update the owning component stylesheet instead.
 - Do not make tests depend on function order or exact SVG path coordinates.
