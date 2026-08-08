@@ -1,47 +1,57 @@
 # Campus Buddy MVP Demo
 
-A local prototype for a responsive college-companion game. It combines a character-centered Buddy experience, visual-novel dialogue, three-quarter room exploration, practical campus tools, and a handheld-style Buddy Console.
+A dependency-free browser prototype for a responsive college-companion game. It includes Buddy onboarding and customization, Home and Explorer views of one shared room state, dialogue, lightweight campus tools, and Console Mode.
 
-## Project structure
+## Architecture
 
-- `index.html` — semantic application structure and mode markup
-- `styles.css` — shared visual language, responsive layouts, room themes, and accessibility behavior
-- `app.js` — prototype state, rendering, interactions, and mode transitions
-- `DESIGN.md` — the source of truth for the intended Campus Buddy design system
-- `tests/structure.test.mjs` — lightweight architecture, naming, theme, and accessibility contracts
+The repository intentionally keeps each subsystem small so humans and coding agents can load only the files relevant to a task.
 
-## Live demo
+- `index.html` — semantic application structure only.
+- `styles/base.css` — tokens, resets, shared buttons, focus, and utilities.
+- `styles/onboarding.css` — onboarding and Buddy customization layout.
+- `styles/game.css` — Home, Explorer, navigation, and responsive game layout.
+- `styles/overlays.css` — dialogue, panels, toast, and Console Mode.
+- `src/state.js` — canonical state factory and pure utility functions.
+- `src/character.js` — Buddy SVG renderer.
+- `src/room.js` — canonical room/theme/object model and Home rendering.
+- `src/explorer.js` — Explorer collision, movement, and canvas rendering.
+- `src/ui.js` — reusable overlay, panel, and Console content helpers.
+- `app.js` — DOM orchestration and feature initialization.
+- `DESIGN.md` — product and visual invariants.
 
-[Open the GitHub Pages site](https://watsoncsulahack.github.io/game-mvp-demo/).
-
-The site deploys automatically from `main` through `.github/workflows/pages.yml`.
+No build step or package install is required. The scripts are classic browser scripts so the demo still works when `index.html` is opened directly from disk.
 
 ## Run locally
 
-Open `index.html` in a modern browser. No server, build step, account, or external dependency is required.
+Open `index.html` in a modern browser.
 
 ## Demo path
 
-1. Choose **Start sample profile**.
-2. Customize the Buddy’s initial form and disposition.
-   - Drag or swipe horizontally across the preview to rotate through four 90-degree views.
-   - Use the left/right preview buttons or Left/Right Arrow keys for the same rotation.
-   - Keep the pale blank canvas untouched or use compact body, eye, and hair hue controls with optional starter clothing.
-3. Select **Fresh Daytime Dorm**, **Cozy Warm Dorm**, or **Gamer Dorm** in the final onboarding step, then initialize directly into play.
+1. Start the sample profile or enter a university email.
+2. Customize the Buddy and inspect all four views.
+3. Choose a starting dorm and initialize.
 4. Switch between Home and Explorer Mode.
-5. Select the Buddy for Talk, Check in, Plan, and React actions.
-6. Open the assistant-style Buddy Console with the labeled **Console** button and select the low-resolution Buddy head for tools.
+5. Select the Buddy for dialogue or use the bottom application dock.
+6. Open Console Mode for brief, wallet, calculator, focus, and talk demos.
 
-Explorer Mode supports WASD or directional keys, E/Enter/Space to interact, pointer interaction, and labelled touch controls. Overlays can be closed with their close control or Escape.
-
-Character creation uses a contained foldable layout: portrait screens stack a compact turntable over the form, while unfolded screens keep both columns inside the visual viewport. The customization fields own vertical scrolling and the Back/Continue footer remains reachable.
+Explorer Mode supports WASD/arrow keys, E/Enter/Space to interact, pointer interaction, and labeled touch controls.
 
 ## Verify
 
 ```sh
-node --test tests/structure.test.mjs
+node --test tests/*.test.mjs
 node --check app.js
-npx -y @google/design.md lint DESIGN.md
+node --check src/state.js
+node --check src/character.js
+node --check src/room.js
+node --check src/explorer.js
+node --check src/ui.js
 ```
 
-The prototype remains intentionally local and in-memory. Persistence, real voice input, editable planning and study workflows, weather, and evolving Buddy personality are future implementation passes described by `DESIGN.md`.
+## Implementation invariants
+
+- Home and Explorer consume one canonical room-object model.
+- Buddy appearance has one canonical state representation.
+- Responsive layouts must not introduce horizontal page scrolling.
+- Every pointer interaction that matters has a keyboard or button alternative.
+- Rendering modules stay free of application event binding.
