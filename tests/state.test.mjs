@@ -21,9 +21,14 @@ test('profile helpers validate demo emails and create stable local identity', ()
   assert.match(first.identity, /^BUDDY-[0-9A-F]{6}$/);
 });
 
-test('angle and color helpers are deterministic', () => {
-  assert.equal(core.normalizeAngle(-90),270);
-  assert.equal(core.normalizeAngle(451),90);
+test('turnaround angles snap to authored 45 degree views', () => {
+  assert.equal(core.normalizeAngle(-45),315);
+  assert.equal(core.normalizeAngle(44),45);
+  assert.equal(core.normalizeAngle(181),180);
+  assert.equal(core.normalizeAngle(359),0);
+});
+
+test('color helpers are deterministic', () => {
   assert.equal(core.hslToHex(0,100,50),'#FF0000');
   assert.equal(core.hslToHex(120,100,50),'#00FF00');
 });

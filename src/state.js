@@ -73,7 +73,7 @@
   }
 
   function normalizeAngle(angle) {
-    return ((Math.round(Number(angle) / 90) * 90) % 360 + 360) % 360;
+    return ((Math.round(Number(angle) / 45) * 45) % 360 + 360) % 360;
   }
 
   function hslToHex(hue, saturation, lightness) {
