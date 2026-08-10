@@ -1,7 +1,9 @@
 # Buddy turnaround assets
 
-`layers-atlas.png` is derived from the supplied Buddy turnaround. It contains eight fixed logical 256x640 cells per row in this order: front, left quarter front, left side, left quarter rear, rear, right quarter rear, right side, right quarter front. The packed raster may be stored at a lower resolution and scaled by the SVG renderer; the logical cell contract stays 256x640.
+The original eight-view turnaround sheet is the master art reference. The runtime does **not** crop that sheet and does not reconstruct the Buddy silhouette from vector paths or masks.
 
-Rows contain the canonical body, line art, eye mask, three hair styles plus their line masks, and three outfit styles plus their line masks. `src/character.js` maps layer names and view indexes to atlas cells; it does not define anatomy with runtime SVG paths.
+`views/` contains eight separate PNG files extracted once from the master sheet: `front.png`, `left-quarter-front.png`, `left-side.png`, `left-quarter-rear.png`, `rear.png`, `right-quarter-rear.png`, `right-side.png`, and `right-quarter-front.png`. `src/character.js` selects one of these authored images directly for the current 45-degree view.
 
-A selectable hair or clothing option is complete only when its atlas row contains all eight views.
+`layers-atlas.png` is retained only for optional color, hair, and clothing overlays. It is not the source of the base body outline. The uncustomized Buddy therefore renders from the supplied turnaround pixels directly.
+
+Future production hair, clothing, expression, pose, and sprite assets should follow the same rule: authored image files define geometry; code only selects and composes them.

@@ -8,49 +8,51 @@ const context = loadBrowserScripts(['src/state.js','src/character.js']);
 const state = context.CampusBuddyCore.createState();
 const character = context.CampusBuddyCharacter;
 const angles = [0,45,90,135,180,225,270,315];
+const slugs = ['front','left-quarter-front','left-side','left-quarter-rear','rear','right-quarter-rear','right-side','right-quarter-front'];
 
-test('turnaround exposes exactly eight authored views', () => {
+test('turnaround maps eight angles to eight separate authored PNG files', () => {
   assert.equal(character.TURNAROUND_VIEWS.length,8);
-  assert.equal(Array.from(character.TURNAROUND_VIEWS,view=>view.angle).join(','),angles.join(','));
-  assert.equal(new Set(Array.from(character.TURNAROUND_VIEWS,view=>view.slug)).size,8);
+  assert.deepEqual(Array.from(character.TURNAROUND_VIEWS,view=>view.angle),angles);
+  assert.deepEqual(Array.from(character.TURNAROUND_VIEWS,view=>view.slug),slugs);
+  assert.equal(new Set(Array.from(character.TURNAROUND_VIEWS,view=>view.file)).size,8);
+  for (const view of character.TURNAROUND_VIEWS) {
+    assert.equal(view.file,`assets/buddy/turnaround/views/${view.slug}.png`);
+  }
 });
 
-test('all eight views render from the turnaround atlas rather than anatomy paths', () => {
-  const renders = angles.map(angle=>character.renderCharacter(state.buddy,{angle}));
-  assert.equal(new Set(renders).size,8);
-  for (const [index,svg] of renders.entries()) {
-    assert.match(svg,/^<svg/);
-    assert.match(svg,new RegExp(`data-buddy-angle="${angles[index]}"`));
-    assert.match(svg,/layers-atlas\.png/);
+test('default rendering uses the authored view PNG directly with no reconstruction masks', () => {
+  for (const [index,angle] of angles.entries()) {
+    const svg=character.renderCharacter(state.buddy,{angle});
+    assert.match(svg,new RegExp(`href="assets/buddy/turnaround/views/${slugs[index]}\\.png"`));
+    assert.match(svg,/data-authored-turnaround="true"/);
+    assert.doesNotMatch(svg,/layers-atlas\.png/);
     assert.doesNotMatch(svg,/<path\b/);
     assert.doesNotMatch(svg,/undefined|NaN/);
   }
 });
 
-test('body, eye, hair, and clothing customization persist at every angle', () => {
+test('all eight authored PNG files exist and are valid PNGs', () => {
+  for (const slug of slugs) {
+    const file=path.join(root,'assets/buddy/turnaround/views',`${slug}.png`);
+    assert.ok(fs.existsSync(file),`${slug}.png should exist`);
+    const data=fs.readFileSync(file);
+    assert.ok(data.length>1000,`${slug}.png should contain image data`);
+    assert.equal(data.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+  }
+});
+
+test('customization overlays keep the direct authored PNG as the base at every angle', () => {
   state.buddy.appearance.bodyColor='#DDEEFF';
   state.buddy.appearance.eyeColor='#2244AA';
   state.buddy.appearance.hairStyle='bob';
   state.buddy.appearance.hairColor='#775599';
   state.buddy.appearance.outfit='hoodie';
-  for (const angle of angles) {
+  for (const [index,angle] of angles.entries()) {
     const svg=character.renderCharacter(state.buddy,{angle});
+    assert.match(svg,new RegExp(`href="assets/buddy/turnaround/views/${slugs[index]}\\.png"`));
+    assert.match(svg,/layers-atlas\.png/);
     assert.match(svg,/#DDEEFF/);
     assert.match(svg,/#2244AA/);
     assert.match(svg,/#775599/);
-    assert.match(svg,/layers-atlas\.png/);
-    assert.match(svg,/buddy-\d+-\d+-full-bob-hoodie-hair/);
-    assert.match(svg,/buddy-\d+-\d+-full-bob-hoodie-outfit/);
   }
-});
-
-test('every selectable appearance layer has an atlas row', () => {
-  const required=['body','line','eyes',
-    ...['swept','bob','cloud'].flatMap(style=>[`hair-${style}`,`hair-${style}-line`]),
-    ...['tee','hoodie','jacket'].flatMap(style=>[`outfit-${style}`,`outfit-${style}-line`])];
-  assert.equal(Object.keys(character.LAYER_ROWS).length,required.length);
-  for (const layer of required) assert.equal(typeof character.LAYER_ROWS[layer],'number',`${layer} should have an atlas row`);
-  const atlas=path.join(root,'assets/buddy/turnaround/layers-atlas.png');
-  assert.ok(fs.existsSync(atlas));
-  assert.ok(fs.statSync(atlas).size>0);
 });
