@@ -52,7 +52,7 @@
   function atlasMask(id, row, viewIndex) {
     const x = -viewIndex * CELL_WIDTH;
     const y = -row * CELL_HEIGHT;
-    return `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${CELL_WIDTH}" height="${CELL_HEIGHT}" style="mask-type:luminance"><image href="${ATLAS}" x="${x}" y="${y}" width="${SHEET_WIDTH}" height="${ATLAS_HEIGHT}"/></mask>`;
+    return `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${CELL_WIDTH}" height="${CELL_HEIGHT}" style="mask-type:luminance"><image href="${ATLAS}" x="${x}" y="${y}" width="${SHEET_WIDTH}" height="${ATLAS_HEIGHT}" image-rendering="optimizeQuality" style="image-rendering:auto"/></mask>`;
   }
 
   function maskedFill(id, color) {
@@ -98,9 +98,9 @@
       overlays.push(maskedFill(eyesId,appearance.eyeColor));
     }
 
-    return `<svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(buddy.name)} ${view.label.toLowerCase()} view" data-turnaround-view="${view.slug}" data-buddy-angle="${view.angle}" data-pose="${pose}">
+    return `<svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(buddy.name)} ${view.label.toLowerCase()} view" data-turnaround-view="${view.slug}" data-buddy-angle="${view.angle}" data-pose="${pose}" shape-rendering="geometricPrecision" style="image-rendering:auto">
       ${defs.length ? `<defs>${defs.join('')}</defs>` : ''}
-      <image href="${view.file}" x="0" y="0" width="256" height="640" preserveAspectRatio="xMidYMid meet" data-authored-turnaround="true"/>
+      <image href="${view.file}" x="0" y="0" width="256" height="640" preserveAspectRatio="xMidYMid meet" image-rendering="optimizeQuality" style="image-rendering:auto" data-authored-turnaround="true"/>
       ${overlays.join('')}
     </svg>`;
   }
