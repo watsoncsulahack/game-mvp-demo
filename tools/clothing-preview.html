@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Campus Buddy Clothing Preview</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#101a33;background:#eef8fa}body{margin:0;padding:24px}h1{margin:0 0 6px}.note{margin:0 0 20px;color:#526078}.grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:16px}.card{background:#fff;border:2px solid #101a33;border-radius:14px;padding:10px;box-shadow:4px 4px 0 #b9dce3}.stage{position:relative;width:256px;height:640px;max-width:100%;margin:auto}.stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}.label{text-align:center;font-weight:800;margin-top:8px}@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(160px,1fr))}}@media(max-width:520px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Casual outfit alignment preview</h1>
+<p class="note">Canonical 256×640 Buddy frame with PNG overlays. Layer order: body → wide-leg jeans → classic tee → low-top sneakers.</p>
+<div class="grid" id="grid"></div>
+<script>
+const views=['front','left-quarter-front','left-side','left-quarter-rear','rear','right-quarter-rear','right-side','right-quarter-front'];
+const labels=['Front','Left quarter front','Left side','Left quarter rear','Rear','Right quarter rear','Right side','Right quarter front'];
+const root='../assets/buddy';
+const grid=document.querySelector('#grid');
+views.forEach((view,i)=>{
+  const card=document.createElement('section'); card.className='card';
+  card.innerHTML=`<div class="stage"><img src="${root}/turnaround/views/${view}.png" alt=""><img src="${root}/clothing/pants/jeans/wide-leg/${view}.png" alt=""><img src="${root}/clothing/tops/tee/classic/${view}.png" alt=""><img src="${root}/clothing/shoes/sneakers/low-top/${view}.png" alt=""></div><div class="label">${labels[i]}</div>`;
+  grid.append(card);
+});
+</script>
+</body>
+</html>
