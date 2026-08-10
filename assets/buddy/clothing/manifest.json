@@ -1,10 +1,11 @@
 {
-  "version": 1,
+  "version": 2,
+  "format": "png",
   "canvas": {
     "width": 256,
     "height": 640,
     "origin": "top-left",
-    "alignment": "Matches src/character.js turnaround cell; render at x=0 y=0 without per-view offsets."
+    "alignment": "Matches src/character.js turnaround cell; render at x=0 y=0 without per-view offsets or scaling."
   },
   "views": [
     "front",
@@ -21,31 +22,19 @@
       "category": "tops",
       "type": "tee",
       "variant": "classic",
-      "path": "tops/tee/classic/{view}.svg",
-      "defaultColors": {
-        "body": "#F8F3E7",
-        "trim": "#26354D"
-      }
+      "path": "tops/tee/classic/{view}.png"
     },
     "wide-leg-jeans": {
       "category": "pants",
       "type": "jeans",
       "variant": "wide-leg",
-      "path": "pants/jeans/wide-leg/{view}.svg",
-      "defaultColors": {
-        "denim": "#8BB4D8",
-        "stitch": "#5C82A6"
-      }
+      "path": "pants/jeans/wide-leg/{view}.png"
     },
     "low-top-sneakers": {
       "category": "shoes",
       "type": "sneakers",
       "variant": "low-top",
-      "path": "shoes/sneakers/low-top/{view}.svg",
-      "defaultColors": {
-        "upper": "#FAF8F2",
-        "accent": "#26354D"
-      }
+      "path": "shoes/sneakers/low-top/{view}.png"
     }
   },
   "presets": {

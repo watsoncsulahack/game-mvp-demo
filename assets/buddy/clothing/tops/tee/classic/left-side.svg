@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="640" viewBox="0 0 256 640" role="img">
-<defs><mask id="neck"><rect width="256" height="640" fill="white"/><ellipse cx="133" cy="160.5" rx="21" ry="15.5" fill="black"/></mask></defs>
-<g mask="url(#neck)"><polygon points="105,161 126,151 151,158 177,176 173,360 91,360 89,195" fill="#F8F3E7" stroke="#111318" stroke-width="3" stroke-linejoin="round"/><polygon points="151,158 177,176 184,239 158,242 145,203" fill="#F8F3E7" stroke="#111318" stroke-width="3" stroke-linejoin="round"/></g><path d="M 112 160.5 A 21.0 15.5 0 0 0 154 160.5" fill="none" stroke="#26354D" stroke-width="5" stroke-linecap="round"/><polyline points="159,234 182,231" fill="none" stroke="#26354D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><polyline points="91,356 173,356" fill="none" stroke="#111318" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
