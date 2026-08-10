@@ -1,0 +1,46 @@
+name: Rebuild precise Casual PNGs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - assets/casual-clothing-set
+    paths:
+      - scripts/regenerate_casual_assets_precise.py
+      - .github/workflows/regenerate-casual-assets-precise.yml
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: assets/casual-clothing-set
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pillow numpy
+      - name: Rebuild and clean all 24 PNG overlays
+        run: python scripts/regenerate_casual_assets_precise.py
+      - name: Validate complete asset set
+        run: |
+          test "$(find assets/buddy/clothing/tops/tee/classic -name '*.png' | wc -l)" -eq 8
+          test "$(find assets/buddy/clothing/pants/jeans/wide-leg -name '*.png' | wc -l)" -eq 8
+          test "$(find assets/buddy/clothing/shoes/sneakers/low-top -name '*.png' | wc -l)" -eq 8
+      - name: Commit corrected PNGs
+        run: |
+          if git diff --quiet -- assets/buddy/clothing; then
+            echo "Assets are already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/buddy/clothing/tops/tee/classic/*.png
+          git add assets/buddy/clothing/pants/jeans/wide-leg/*.png
+          git add assets/buddy/clothing/shoes/sneakers/low-top/*.png
+          git commit -m "Fix Casual PNG alignment and artifacts"
+          git push origin HEAD:assets/casual-clothing-set
