@@ -1,0 +1,170 @@
+name: Materialize Casual clothing assets
+
+on:
+  push:
+    branches:
+      - agent/casual-clothing-assets-20260810
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/casual-clothing-assets-20260810
+          fetch-depth: 0
+
+      - name: Install authored Casual assets and renderer integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL 'https://filebin.net/openai-campus-buddy-casual-20260810-8f7d9c2e/campus-buddy-casual-runtime.zip' -o /tmp/campus-buddy-casual-runtime.zip
+          unzip -oq /tmp/campus-buddy-casual-runtime.zip -d .
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('src/state.js')
+          s = p.read_text()
+          if "outfit: 'casual'" not in s:
+              s = s.replace("    outfit: 'none'", "    outfit: 'casual'", 1)
+          p.write_text(s)
+
+          p = Path('src/character.js')
+          s = p.read_text()
+          if "const CLOTHING_ROOT = 'assets/buddy/clothing';" not in s:
+              s = s.replace(
+                  "  const VIEWS_ROOT = `${ASSET_ROOT}/views`;\n  const ATLAS = `${ASSET_ROOT}/layers-atlas.png`;",
+                  """  const VIEWS_ROOT = `${ASSET_ROOT}/views`;
+          const CLOTHING_ROOT = 'assets/buddy/clothing';
+          const CASUAL_LAYERS = Object.freeze([
+            { key:'tee', root:`${CLOTHING_ROOT}/tops/tee/classic` },
+            { key:'jeans', root:`${CLOTHING_ROOT}/pants/jeans/wide-leg` },
+            { key:'sneakers', root:`${CLOTHING_ROOT}/shoes/sneakers/low-top` }
+          ]);
+          const ATLAS = `${ASSET_ROOT}/layers-atlas.png`;""",
+                  1,
+              )
+              s = s.replace(
+                  "    const hasOutfit = appearance.outfit !== 'none';",
+                  "    const hasCasualOutfit = appearance.outfit === 'casual';\n    const hasLegacyOutfit = appearance.outfit !== 'none' && !hasCasualOutfit;",
+                  1,
+              )
+              s = s.replace(
+                  """    if (hasOutfit) {
+              defs.push(atlasMask(outfitId,LAYER_ROWS[`outfit-${appearance.outfit}`],view.index));
+              defs.push(atlasMask(outfitLineId,LAYER_ROWS[`outfit-${appearance.outfit}-line`],view.index));
+              overlays.push(maskedFill(outfitId,OUTFIT_COLORS[appearance.outfit] || OUTFIT_COLORS.tee));
+              overlays.push(maskedFill(outfitLineId,'#111318'));
+            }""",
+                  """    if (hasCasualOutfit) {
+              overlays.push(...CASUAL_LAYERS.map(layer => `<image href=\"${layer.root}/${view.slug}.png\" x=\"0\" y=\"0\" width=\"256\" height=\"640\" preserveAspectRatio=\"xMidYMid meet\" data-casual-layer=\"${layer.key}\"/>`));
+            }
+            if (hasLegacyOutfit) {
+              defs.push(atlasMask(outfitId,LAYER_ROWS[`outfit-${appearance.outfit}`],view.index));
+              defs.push(atlasMask(outfitLineId,LAYER_ROWS[`outfit-${appearance.outfit}-line`],view.index));
+              overlays.push(maskedFill(outfitId,OUTFIT_COLORS[appearance.outfit] || OUTFIT_COLORS.tee));
+              overlays.push(maskedFill(outfitLineId,'#111318'));
+            }""",
+                  1,
+              )
+              s = s.replace(
+                  "    ASSET_ROOT,\n    VIEWS_ROOT,\n    ATLAS,",
+                  "    ASSET_ROOT,\n    VIEWS_ROOT,\n    CLOTHING_ROOT,\n    CASUAL_LAYERS,\n    ATLAS,",
+                  1,
+              )
+          p.write_text(s)
+
+          p = Path('app.js')
+          s = p.read_text()
+          if "casual:'Casual'" not in s:
+              s = s.replace(
+                  "Object.entries({none:'None',tee:'Campus tee',hoodie:'Soft hoodie',jacket:'Light jacket'})",
+                  "Object.entries({casual:'Casual',none:'None',tee:'Campus tee',hoodie:'Soft hoodie',jacket:'Light jacket'})",
+                  1,
+              )
+          p.write_text(s)
+
+          p = Path('tests/character.test.mjs')
+          s = p.read_text()
+          if "const casualRoots" not in s:
+              s = s.replace(
+                  "const slugs = ['front','left-quarter-front','left-side','left-quarter-rear','rear','right-quarter-rear','right-side','right-quarter-front'];\n",
+                  "const slugs = ['front','left-quarter-front','left-side','left-quarter-rear','rear','right-quarter-rear','right-side','right-quarter-front'];\nconst casualRoots = ['tops/tee/classic','pants/jeans/wide-leg','shoes/sneakers/low-top'];\n",
+                  1,
+              )
+              s = s.replace(
+                  "    assert.match(svg,/data-authored-turnaround=\"true\"/);",
+                  """    for (const rootPath of casualRoots) {
+              assert.match(svg,new RegExp(`href=\"assets/buddy/clothing/${rootPath}/${slugs[index]}\\\\.png\"`));
+            }
+            assert.match(svg,/data-casual-layer=\"tee\"/);
+            assert.match(svg,/data-casual-layer=\"jeans\"/);
+            assert.match(svg,/data-casual-layer=\"sneakers\"/);
+            assert.match(svg,/data-authored-turnaround=\"true\"/);""",
+                  1,
+              )
+              marker = "test('customization overlays keep the direct authored PNG as the base at every angle', () => {"
+              extra = """test('Casual is selected by default and every garment view is a valid PNG', () => {
+            assert.equal(state.buddy.appearance.outfit,'casual');
+            for (const rootPath of casualRoots) {
+              for (const slug of slugs) {
+                const file=path.join(root,'assets/buddy/clothing',rootPath,`${slug}.png`);
+                assert.ok(fs.existsSync(file),`${rootPath}/${slug}.png should exist`);
+                const data=fs.readFileSync(file);
+                assert.ok(data.length>1000,`${rootPath}/${slug}.png should contain image data`);
+                assert.equal(data.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+              }
+            }
+          });
+
+          """
+              s = s.replace(marker, extra + marker, 1)
+          p.write_text(s)
+
+          Path('assets/buddy/clothing/README.md').write_text("""# Buddy clothing assets
+
+          Runtime clothing is authored as transparent 256x640 PNG layers aligned to the eight canonical Buddy turnaround views.
+
+          The `casual` outfit is composed over the authored Buddy body using:
+
+          1. `tops/tee/classic/<view>.png`
+          2. `pants/jeans/wide-leg/<view>.png`
+          3. `shoes/sneakers/low-top/<view>.png`
+
+          Each garment ships all eight canonical view slugs. `src/character.js` selects and layers these authored files without reconstructing garment geometry.
+          """)
+
+          for f in [
+              Path('agent-casual-upload-probe.txt'),
+              Path('cleanup-request.txt'),
+              Path('assets/buddy/clothing/.upload-status'),
+              Path('assets/buddy/clothing/.binary-upload-note'),
+              Path('assets/buddy/clothing/.release-upload-plan'),
+              Path('.github/workflows/materialize-casual-assets.yml'),
+          ]:
+              try:
+                  f.unlink()
+              except FileNotFoundError:
+                  pass
+          PY
+
+          node --test tests/*.test.mjs
+          node --check app.js
+          node --check src/state.js
+          node --check src/character.js
+          node --check src/room.js
+          node --check src/explorer.js
+          node --check src/ui.js
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Add Casual turnaround clothing assets'
+            git push origin HEAD:agent/casual-clothing-assets-20260810
+          fi
