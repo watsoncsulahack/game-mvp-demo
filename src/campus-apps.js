@@ -269,7 +269,8 @@
     const type = transaction.kind || (incoming ? 'received' : 'sent');
     const title = transaction.label || (incoming ? 'Received test funds' : 'Test-network transfer');
     let subtitle = transaction.at || 'Test network';
-    if (transaction.recipient) subtitle = `To ${shortenAddress(transaction.recipient)}`;
+    if (transaction.recipientEmail) subtitle = `To ${transaction.recipientEmail}`;
+    else if (transaction.recipient) subtitle = `To ${shortenAddress(transaction.recipient)}`;
     const displayAmount = delta === 0 ? '' : `${delta > 0 ? '+ ' : '− '}${walletMoney(delta)} TEST`;
     return `<div class="cw-transaction-row">
       <span class="cw-transaction-icon${incoming ? ' incoming' : ''}"><svg viewBox="0 0 24 24" aria-hidden="true">${walletIcon(type, incoming)}</svg></span>
@@ -307,11 +308,11 @@
 
   function walletReceive() {
     return `<section class="cw-content-view narrow" data-wallet-view="receive">
-      <header class="cw-page-heading"><div><span class="cw-eyebrow">Receive</span><h1>Receive funds</h1><p>Share the wallet address below with a sender.</p></div></header>
+      <header class="cw-page-heading"><div><span class="cw-eyebrow">Receive</span><h1>Receive funds</h1><p>Other students can send to your campus email. The resolved test-wallet address is available below for reference.</p></div></header>
       <section class="cw-detail-card cw-card">
-        <span class="cw-metric-label">Wallet address</span>
+        <span class="cw-metric-label">Resolved wallet address</span>
         <div class="cw-address-box"><code>${esc(session.address)}</code><button type="button" data-wallet-copy-address><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><span>Copy</span></button></div>
-        <dl class="cw-detail-list"><div><dt>Network</dt><dd>Test network</dd></div><div><dt>Account owner</dt><dd>${esc(session.email)}</dd></div></dl>
+        <dl class="cw-detail-list"><div><dt>Receive by email</dt><dd>${esc(session.email)}</dd></div><div><dt>Network</dt><dd>Test network</dd></div></dl>
         <div class="cw-button-row"><button class="cw-button secondary" type="button" data-wallet-route="overview">Done</button></div>
       </section>
     </section>`;
@@ -319,9 +320,9 @@
 
   function walletSend() {
     return `<section class="cw-content-view narrow" data-wallet-view="send">
-      <header class="cw-page-heading"><div><span class="cw-eyebrow">Send</span><h1>Send funds</h1><p>Create a test-network transfer.</p></div></header>
+      <header class="cw-page-heading"><div><span class="cw-eyebrow">Send</span><h1>Send funds</h1><p>Send TEST funds using a campus email. Campus Wallet resolves the recipient's demo wallet address automatically.</p></div></header>
       <form class="cw-form-card cw-card" id="walletTransferForm" novalidate>
-        <label for="walletRecipient">Recipient wallet</label><input id="walletRecipient" name="recipient" placeholder="0x71C4...92F8" autocomplete="off">
+        <label for="walletRecipient">Recipient email</label><input id="walletRecipient" name="recipient" type="email" inputmode="email" placeholder="student@example.edu" autocomplete="email">
         <label for="walletAmount">Amount</label><div class="cw-amount-field"><span>$</span><input id="walletAmount" name="amount" inputmode="decimal" placeholder="0.00"><b>TEST</b></div>
         <label for="walletNote">Note <span>(optional)</span></label><input id="walletNote" name="note" placeholder="Shared project expense" maxlength="80">
         <div class="cw-form-meta"><span>Available balance</span><strong>${walletMoney(session.balance)} TEST</strong></div>
@@ -332,12 +333,12 @@
   }
 
   function walletReview() {
-    const pending = walletPending || { amount:0, recipient:'—' };
+    const pending = walletPending || { amount:0, recipientEmail:'—', recipient:'—' };
     return `<section class="cw-content-view narrow" data-wallet-view="review">
       <header class="cw-page-heading"><div><span class="cw-eyebrow">Confirmation</span><h1>Review transfer</h1><p>Confirm the details before submitting.</p></div></header>
       <section class="cw-detail-card cw-card cw-review-card">
-        <dl class="cw-review-list"><div><dt>You send</dt><dd>${walletMoney(pending.amount)} TEST</dd></div><div><dt>To</dt><dd>${esc(shortenAddress(pending.recipient))}</dd></div><div><dt>Network</dt><dd>Test network</dd></div><div><dt>Fee</dt><dd>$0.00 TEST</dd></div></dl>
-        <p class="cw-safety-note"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3.3 8 8 9 4.7-1 8-4 8-9V7Z"/><path d="m9 12 2 2 4-4"/></svg> Demo transaction — no real funds are moved.</p>
+        <dl class="cw-review-list"><div><dt>You send</dt><dd>${walletMoney(pending.amount)} TEST</dd></div><div><dt>To</dt><dd>${esc(pending.recipientEmail)}</dd></div><div><dt>Network</dt><dd>Test network</dd></div><div><dt>Fee</dt><dd>$0.00 TEST</dd></div></dl>
+        <p class="cw-safety-note"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3.3 8 8 9 4.7-1 8-4 8-9V7Z"/><path d="m9 12 2 2 4-4"/></svg> Campus Wallet resolved the recipient's demo wallet from their email. No real funds are moved.</p>
         <div class="cw-button-row split"><button class="cw-button secondary" type="button" data-wallet-route="send">Cancel</button><button class="cw-button primary" type="button" data-wallet-confirm>Confirm and send</button></div>
       </section>
     </section>`;
@@ -348,8 +349,8 @@
   }
 
   function walletCompleteView() {
-    const complete = walletComplete || { amount:0, recipient:'—', id:'—' };
-    return `<section class="cw-content-view centered" data-wallet-view="complete"><div class="cw-status-card cw-card cw-complete-card"><div class="cw-success-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m9 16 5 5 10-11"/></svg></div><span class="cw-eyebrow">Transaction confirmed</span><h1>Transfer complete</h1><p><strong>${walletMoney(complete.amount)} TEST</strong> was sent successfully.</p><dl class="cw-detail-list compact"><div><dt>Recipient</dt><dd>${esc(shortenAddress(complete.recipient))}</dd></div><div><dt>Transaction</dt><dd>${esc(shortenAddress(complete.id))}</dd></div></dl><div class="cw-button-row split"><button class="cw-button secondary" type="button" data-wallet-route="activity">View activity</button><button class="cw-button primary" type="button" data-wallet-route="overview">Done</button></div></div></section>`;
+    const complete = walletComplete || { amount:0, recipientEmail:'—', recipient:'—', id:'—' };
+    return `<section class="cw-content-view centered" data-wallet-view="complete"><div class="cw-status-card cw-card cw-complete-card"><div class="cw-success-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m9 16 5 5 10-11"/></svg></div><span class="cw-eyebrow">Transaction confirmed</span><h1>Transfer complete</h1><p><strong>${walletMoney(complete.amount)} TEST</strong> was sent successfully.</p><dl class="cw-detail-list compact"><div><dt>Recipient</dt><dd>${esc(complete.recipientEmail)}</dd></div><div><dt>Transaction</dt><dd>${esc(shortenAddress(complete.id))}</dd></div></dl><div class="cw-button-row split"><button class="cw-button secondary" type="button" data-wallet-route="activity">View activity</button><button class="cw-button primary" type="button" data-wallet-route="overview">Done</button></div></div></section>`;
   }
 
   function walletActivity() {
@@ -492,16 +493,16 @@
     render('wallet');
   }
 
-  function validateWalletTransfer(recipient, rawAmount) {
-    const cleanRecipient = String(recipient || '').trim();
-    if (!cleanRecipient) throw new Error('Enter a recipient wallet address.');
-    if (cleanRecipient.length < 6) throw new Error('Enter a complete recipient wallet address.');
+  function validateWalletTransfer(recipientEmail, rawAmount) {
+    const cleanEmail = String(recipientEmail || '').trim().toLowerCase();
+    if (!cleanEmail) throw new Error('Enter a recipient email address.');
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(cleanEmail)) throw new Error('Enter a valid recipient email address.');
     const normalized = String(rawAmount || '').trim();
     if (!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(normalized)) throw new Error('Enter an amount with no more than two decimal places.');
     const parsed = Number(normalized);
     if (!(parsed > 0)) throw new Error('Enter an amount greater than zero.');
     if (parsed > session.balance + 0.000001) throw new Error('Amount exceeds the available balance.');
-    return { recipient:cleanRecipient, amount:Math.round(parsed * 100) / 100 };
+    return { recipientEmail:cleanEmail, recipient:demoAddress(cleanEmail), amount:Math.round(parsed * 100) / 100 };
   }
 
   function confirmWalletTransfer() {
@@ -520,11 +521,12 @@
         at:new Date().toLocaleString(),
         createdAt:Date.now(),
         kind:'sent',
+        recipientEmail:pending.recipientEmail,
         recipient:pending.recipient,
         note:pending.note || ''
       });
       save();
-      walletComplete = { amount:pending.amount, recipient:pending.recipient, id };
+      walletComplete = { amount:pending.amount, recipientEmail:pending.recipientEmail, recipient:pending.recipient, id };
       walletPending = null;
       walletRoute = 'complete';
       render('wallet');
@@ -674,11 +676,11 @@
   document.addEventListener('submit', event => {
     if (!event.target.matches('#walletTransferForm')) return;
     event.preventDefault();
-    const recipient = $('#walletRecipient')?.value || '';
+    const recipientEmail = $('#walletRecipient')?.value || '';
     const rawAmount = $('#walletAmount')?.value || '';
     const note = $('#walletNote')?.value?.trim() || '';
     try {
-      const transfer = validateWalletTransfer(recipient, rawAmount);
+      const transfer = validateWalletTransfer(recipientEmail, rawAmount);
       walletPending = { ...transfer, note };
       walletRoute = 'review';
       render('wallet');
