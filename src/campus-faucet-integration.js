@@ -12,7 +12,8 @@
     ['campus-bookstore-overlays', 'styles/campus-bookstore-overlays.css'],
     ['campus-bookstore-responsive', 'styles/campus-bookstore-responsive.css'],
     ['campus-bookstore-selection', 'styles/campus-bookstore-selection.css'],
-    ['campus-bookstore-parity', 'styles/campus-bookstore-parity.css']
+    ['campus-bookstore-parity', 'styles/campus-bookstore-parity.css'],
+    ['campus-bookstore-wallet-checkout', 'styles/campus-bookstore-wallet-checkout.css']
   ];
 
   styles.forEach(([name, href]) => {
@@ -24,12 +25,25 @@
     document.head.appendChild(link);
   });
 
+  function loadBookstoreWalletCheckout() {
+    if (document.querySelector('script[data-campus-bookstore-wallet-checkout]')) return;
+    const script = document.createElement('script');
+    script.src = 'src/campus-bookstore-wallet-checkout.js';
+    script.async = false;
+    script.dataset.campusBookstoreWalletCheckout = '';
+    document.head.appendChild(script);
+  }
+
   function loadBookstoreParity() {
-    if (document.querySelector('script[data-campus-bookstore-parity]')) return;
+    if (document.querySelector('script[data-campus-bookstore-parity]')) {
+      loadBookstoreWalletCheckout();
+      return;
+    }
     const script = document.createElement('script');
     script.src = 'src/campus-bookstore-parity.js';
     script.async = false;
     script.dataset.campusBookstoreParity = '';
+    script.addEventListener('load', loadBookstoreWalletCheckout, { once:true });
     document.head.appendChild(script);
   }
 
