@@ -66,8 +66,7 @@
       let value = node.nodeValue;
       if (!value || !value.trim()) return;
       value = value
-        .replace(/(\d[\d,]*\.\d{2})\s*TEST\b/g, '$$$1')
-        .replace(/\$([\d,]+\.\d{2})\s*TEST\b/g, '$$$1')
+        .replace(/\$?(\d[\d,]*\.\d{2})\s*TEST\b/g, '$$$1')
         .replace(/\bTEST\b/g, '')
         .replace(/\bTest network\b/g, 'Demo network')
         .replace(/\btest network\b/g, 'demo network')
@@ -77,6 +76,13 @@
         .replace(/\s{2,}/g, ' ');
       node.nodeValue = value;
     });
+  }
+
+  function syncWalletNumbers(session, root) {
+    const balance = root?.querySelector('.cw-balance-card strong');
+    if (balance) balance.textContent = money(session.balance);
+    const available = root?.querySelector('.cw-form-meta strong');
+    if (available) available.textContent = money(session.balance);
   }
 
   function faucetMarkup(session) {
@@ -184,6 +190,7 @@
         $('#campusAppsTitle').textContent = 'faucet.campus.local/';
         renderFaucet(session);
       }
+      syncWalletNumbers(session, content);
       replaceCurrencyText(content);
     } finally {
       syncing = false;
