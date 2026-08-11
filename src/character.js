@@ -4,6 +4,7 @@
   const { normalizeAngle, escapeHtml } = window.CampusBuddyCore;
   const ASSET_ROOT = 'assets/buddy/turnaround';
   const VIEWS_ROOT = `${ASSET_ROOT}/views`;
+  const CLOTHING_ROOT = `${ASSET_ROOT}/clothing`;
   const ATLAS = `${ASSET_ROOT}/layers-atlas.png`;
   const CELL_WIDTH = 256;
   const CELL_HEIGHT = 640;
@@ -42,6 +43,11 @@
   });
 
   const OUTFIT_COLORS = Object.freeze({ tee:'#5D7FE6', hoodie:'#5FB594', jacket:'#EF9B7F' });
+  const CASUAL_OUTFIT = Object.freeze([
+    { id:'top', root:`${CLOTHING_ROOT}/tops/shirts/tee-classic` },
+    { id:'bottoms', root:`${CLOTHING_ROOT}/bottoms/jeans-wide-leg` },
+    { id:'shoes', root:`${CLOTHING_ROOT}/footwear/shoes/sneakers-low-top` }
+  ]);
   let renderSerial = 0;
 
   function viewForAngle(angle) {
@@ -59,6 +65,10 @@
     return `<rect width="${CELL_WIDTH}" height="${CELL_HEIGHT}" fill="${color}" mask="url(#${id})"/>`;
   }
 
+  function casualLayers(view) {
+    return CASUAL_OUTFIT.map(layer => `<image href="${layer.root}/${view.slug}.png" x="0" y="0" width="256" height="640" preserveAspectRatio="xMidYMid meet" data-clothing-layer="casual-${layer.id}"/>`).join('');
+  }
+
   function renderCharacter(buddy, { angle=0, crop='full', pose='standing' } = {}) {
     const view = viewForAngle(angle);
     const appearance = buddy.appearance;
@@ -67,6 +77,7 @@
     const customEyes = appearance.eyeColor.toUpperCase() !== SOURCE_EYE_COLOR;
     const hasHair = appearance.hairStyle !== 'none';
     const hasOutfit = appearance.outfit !== 'none';
+    const isCasual = appearance.outfit === 'tee';
     const bodyId = `${prefix}-body`;
     const eyesId = `${prefix}-eyes`;
     const hairId = `${prefix}-hair`;
@@ -81,7 +92,9 @@
       defs.push(atlasMask(bodyId,LAYER_ROWS.body,view.index));
       overlays.push(maskedFill(bodyId,appearance.bodyColor));
     }
-    if (hasOutfit) {
+    if (isCasual) {
+      overlays.push(casualLayers(view));
+    } else if (hasOutfit) {
       defs.push(atlasMask(outfitId,LAYER_ROWS[`outfit-${appearance.outfit}`],view.index));
       defs.push(atlasMask(outfitLineId,LAYER_ROWS[`outfit-${appearance.outfit}-line`],view.index));
       overlays.push(maskedFill(outfitId,OUTFIT_COLORS[appearance.outfit] || OUTFIT_COLORS.tee));
@@ -109,9 +122,18 @@
     return renderCharacter(buddy,{crop:'bust'}).replace('<svg ','<svg data-console-head="true" ');
   }
 
+  function relabelCasualChoice() {
+    if (typeof document === 'undefined') return;
+    const casualButton = document.querySelector('[data-outfit="tee"]');
+    if (casualButton) casualButton.textContent = 'Casual';
+  }
+
+  if (typeof document !== 'undefined') setTimeout(relabelCasualChoice,0);
+
   window.CampusBuddyCharacter = Object.freeze({
     ASSET_ROOT,
     VIEWS_ROOT,
+    CLOTHING_ROOT,
     ATLAS,
     CELL_WIDTH,
     CELL_HEIGHT,
@@ -120,6 +142,7 @@
     TURNAROUND_VIEWS,
     LAYER_ROWS,
     OUTFIT_COLORS,
+    CASUAL_OUTFIT,
     viewForAngle,
     renderCharacter,
     renderConsoleHead
