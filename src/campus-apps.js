@@ -3,6 +3,7 @@
 
   const PREFIX = 'campus-buddy.unified-session.v1:';
   const DASHBOARD_PIN_PREFIX = 'campus-buddy.dashboard-pins.v1:';
+  const DASHBOARD_ORDER_PREFIX = 'campus-buddy.dashboard-order.v1:';
 
   const PLACEHOLDER_APPS = [
     { id:'outlook', name:'Outlook', icon:'O', color:'#2563eb' },
@@ -39,6 +40,21 @@
   let active = 'dashboard';
   let dashboardQuery = '';
   let toastTimer = null;
+  let dragAppId = null;
+  let dragOriginGrid = null;
+  let suppressLaunchUntil = 0;
+
+  const touchDrag = {
+    timer:null,
+    active:false,
+    appId:null,
+    targetId:null,
+    after:false,
+    startX:0,
+    startY:0,
+    originGrid:null,
+    ghost:null
+  };
 
   const $ = selector => document.querySelector(selector);
   const esc = value => String(value).replace(/[&<>"']/g, character => ({
@@ -48,6 +64,7 @@
   const email = () => ($('#reviewEmail')?.textContent || $('#studentEmail')?.value || 'student@university.edu').trim().toLowerCase();
   const key = () => PREFIX + email();
   const pinKey = () => DASHBOARD_PIN_PREFIX + email();
+  const orderKey = () => DASHBOARD_ORDER_PREFIX + email();
 
   function fresh() {
     return { email:email(), balance:0, faucetClaimed:false, transactions:[], orders:[], entitlements:[] };
@@ -101,6 +118,38 @@
     try { localStorage.setItem(pinKey(), JSON.stringify([...pins])); } catch {}
   }
 
+  function getOrder() {
+    const fallback = APPS.map(app => app.id);
+    try {
+      const stored = JSON.parse(localStorage.getItem(orderKey()) || '[]');
+      if (!Array.isArray(stored) || !stored.length) return fallback;
+      const known = new Set(fallback);
+      const seen = new Set();
+      const ordered = [];
+      stored.forEach(id => {
+        if (known.has(id) && !seen.has(id)) {
+          seen.add(id);
+          ordered.push(id);
+        }
+      });
+      fallback.forEach(id => {
+        if (!seen.has(id)) ordered.push(id);
+      });
+      return ordered;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function saveOrder(order) {
+    try { localStorage.setItem(orderKey(), JSON.stringify(order)); } catch {}
+  }
+
+  function orderedApps() {
+    const byId = new Map(APPS.map(app => [app.id, app]));
+    return getOrder().map(id => byId.get(id)).filter(Boolean);
+  }
+
   function iconMarkup(app) {
     if (app.image) {
       return `<span class="dashboard-app-icon dashboard-app-icon-image"><img src="${app.image}" alt=""></span>`;
@@ -111,7 +160,8 @@
   function dashboardCard(app, pins) {
     const pinned = pins.has(app.id);
     const launchLabel = app.live ? `Open ${app.name}` : `${app.name} placeholder`;
-    return `<article class="dashboard-app-card${app.live ? ' is-live' : ''}" data-dashboard-app-card="${app.id}">
+    const draggable = dashboardQuery.trim() ? 'false' : 'true';
+    return `<article class="dashboard-app-card${app.live ? ' is-live' : ''}" data-dashboard-app-card="${app.id}" draggable="${draggable}">
       <div class="dashboard-card-top">
         ${app.live ? '<span class="dashboard-live-dot" title="Integrated app" aria-label="Integrated app"></span>' : '<span></span>'}
         <div class="dashboard-menu-wrap">
@@ -121,7 +171,7 @@
           </div>
         </div>
       </div>
-      <button class="dashboard-app-launch" type="button" data-dashboard-launch="${app.id}" aria-label="${esc(launchLabel)}">
+      <button class="dashboard-app-launch" type="button" data-dashboard-launch="${app.id}" aria-label="${esc(launchLabel)}" draggable="false">
         ${iconMarkup(app)}
         <span class="dashboard-app-name">${esc(app.name)}</span>
         ${app.live ? `<small>${esc(app.copy)}</small>` : ''}
@@ -132,7 +182,8 @@
   function dashboard() {
     const pins = getPins();
     const query = dashboardQuery.trim().toLowerCase();
-    const filtered = query ? APPS.filter(app => app.name.toLowerCase().includes(query)) : APPS;
+    const apps = orderedApps();
+    const filtered = query ? apps.filter(app => app.name.toLowerCase().includes(query)) : apps;
     const pinnedApps = filtered.filter(app => pins.has(app.id));
     const allApps = filtered.filter(app => !pins.has(app.id));
 
@@ -150,11 +201,9 @@
       <main class="campus-dashboard-main">
         <header class="campus-dashboard-topbar">
           <div><h1>Apps dashboard</h1><p>Campus Buddy computer · connected campus services</p></div>
-          <button id="campusDashboardClose" class="campus-dashboard-close" type="button" aria-label="Close computer">×</button>
         </header>
         <section class="campus-dashboard-search-row">
           <label class="dashboard-search-label"><span class="visually-hidden">Search apps</span><input id="campusDashboardSearch" type="search" placeholder="Search apps" value="${esc(dashboardQuery)}" autocomplete="off"></label>
-          <div class="dashboard-wallet-chip"><span>Wallet</span><strong>${amount(session.balance)}</strong></div>
         </section>
         <section class="campus-dashboard-tabs" aria-label="App categories">
           <button class="active" type="button">Apps</button>
@@ -163,13 +212,13 @@
         </section>
         <section class="campus-dashboard-panel">
           <div class="campus-dashboard-panel-head"><h2>Pinned apps</h2><button class="dashboard-link-button" type="button" data-dashboard-clear-pins>Clear pins</button></div>
-          <div class="dashboard-apps-grid">${pinnedApps.map(app => dashboardCard(app, pins)).join('')}</div>
+          <div class="dashboard-apps-grid" data-dashboard-grid="pinned">${pinnedApps.map(app => dashboardCard(app, pins)).join('')}</div>
           ${pinnedApps.length ? '' : '<p class="dashboard-hint">No pinned apps yet. Use the three-dots menu on any app card.</p>'}
         </section>
         <section class="campus-dashboard-panel">
           <div class="campus-dashboard-panel-head"><h2>All apps</h2><span>${filtered.length} available</span></div>
-          <p class="dashboard-hint">The original campus apps remain as placeholders. Campus Wallet, Campus Faucet, and Campus Bookstore are connected to this Buddy session.</p>
-          <div class="dashboard-apps-grid">${allApps.map(app => dashboardCard(app, pins)).join('')}</div>
+          <p class="dashboard-hint">Drag app cards to rearrange them. The original campus apps remain placeholders; Wallet, Faucet, and Bookstore are connected to this Buddy session.</p>
+          <div class="dashboard-apps-grid" data-dashboard-grid="all">${allApps.map(app => dashboardCard(app, pins)).join('')}</div>
           ${allApps.length ? '' : '<p class="dashboard-hint">No apps match this search.</p>'}
         </section>
       </main>
@@ -194,12 +243,16 @@
     }).join('')}</div></section>`;
   }
 
+  function browserLocation(view) {
+    if (view === 'dashboard') return 'my.csulb.edu/apps';
+    return `campus.local/${view}`;
+  }
+
   function render(view = active) {
     active = view;
     const dashboardMode = view === 'dashboard';
     $('#campusAppsShell').classList.toggle('dashboard-mode', dashboardMode);
-    const title = dashboardMode ? 'Apps Dashboard' : APPS.find(app => app.id === view)?.name || 'Campus Apps';
-    $('#campusAppsTitle').textContent = title;
+    $('#campusAppsTitle').textContent = browserLocation(view);
     $('#campusAppsBack').hidden = dashboardMode;
     $('#campusAppsContent').innerHTML = dashboardMode ? dashboard() : view === 'wallet' ? wallet() : view === 'faucet' ? faucet() : bookstore();
   }
@@ -214,6 +267,9 @@
   }
 
   function close() {
+    clearTouchDrag();
+    dragAppId = null;
+    dragOriginGrid = null;
     $('#campusAppsShell').hidden = true;
   }
 
@@ -272,6 +328,7 @@
   }
 
   function launchDashboardApp(id) {
+    if (Date.now() < suppressLaunchUntil) return;
     if (INTEGRATED_IDS.has(id)) {
       render(id);
       $('#campusAppsClose')?.focus();
@@ -286,6 +343,66 @@
     pins.has(id) ? pins.delete(id) : pins.add(id);
     savePins(pins);
     render('dashboard');
+  }
+
+  function clearDropIndicators() {
+    document.querySelectorAll('.dashboard-app-card').forEach(card => card.classList.remove('dragging','drop-before','drop-after','touch-dragging'));
+  }
+
+  function moveApp(draggedId, targetId, after) {
+    if (!draggedId || !targetId || draggedId === targetId) return;
+    const order = getOrder().filter(id => id !== draggedId);
+    const targetIndex = order.indexOf(targetId);
+    if (targetIndex < 0) return;
+    order.splice(targetIndex + (after ? 1 : 0), 0, draggedId);
+    saveOrder(order);
+    render('dashboard');
+  }
+
+  function dropIntent(card, clientX) {
+    const rect = card.getBoundingClientRect();
+    return clientX >= rect.left + rect.width / 2;
+  }
+
+  function markDropTarget(card, after) {
+    clearDropIndicators();
+    const dragged = document.querySelector(`[data-dashboard-app-card="${dragAppId || touchDrag.appId}"]`);
+    dragged?.classList.add(touchDrag.active ? 'touch-dragging' : 'dragging');
+    card.classList.add(after ? 'drop-after' : 'drop-before');
+  }
+
+  function removeTouchGhost() {
+    touchDrag.ghost?.remove();
+    touchDrag.ghost = null;
+  }
+
+  function clearTouchDrag() {
+    if (touchDrag.timer) clearTimeout(touchDrag.timer);
+    touchDrag.timer = null;
+    removeTouchGhost();
+    touchDrag.active = false;
+    touchDrag.appId = null;
+    touchDrag.targetId = null;
+    touchDrag.after = false;
+    touchDrag.originGrid = null;
+    clearDropIndicators();
+  }
+
+  function createTouchGhost(card, x, y) {
+    removeTouchGhost();
+    const ghost = document.createElement('div');
+    ghost.className = 'dashboard-touch-ghost';
+    ghost.textContent = card.querySelector('.dashboard-app-name')?.textContent || 'App';
+    ghost.style.left = `${Math.round(x)}px`;
+    ghost.style.top = `${Math.round(y)}px`;
+    document.body.appendChild(ghost);
+    touchDrag.ghost = ghost;
+  }
+
+  function moveTouchGhost(x, y) {
+    if (!touchDrag.ghost) return;
+    touchDrag.ghost.style.left = `${Math.round(x)}px`;
+    touchDrag.ghost.style.top = `${Math.round(y)}px`;
   }
 
   function setupHost() {
@@ -320,7 +437,121 @@
     }
   });
 
+  document.addEventListener('dragstart', event => {
+    const card = event.target.closest?.('[data-dashboard-app-card]');
+    if (!card || dashboardQuery.trim() || event.target.closest('.dashboard-menu-wrap')) return;
+    dragAppId = card.dataset.dashboardAppCard;
+    dragOriginGrid = card.closest('[data-dashboard-grid]');
+    card.classList.add('dragging');
+    closeDashboardMenus();
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', dragAppId);
+    }
+  });
+
+  document.addEventListener('dragover', event => {
+    if (!dragAppId) return;
+    const card = event.target.closest?.('[data-dashboard-app-card]');
+    if (!card || card.dataset.dashboardAppCard === dragAppId) return;
+    const grid = card.closest('[data-dashboard-grid]');
+    if (!grid || grid !== dragOriginGrid) return;
+    event.preventDefault();
+    const after = dropIntent(card, event.clientX);
+    markDropTarget(card, after);
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+  });
+
+  document.addEventListener('drop', event => {
+    if (!dragAppId) return;
+    const card = event.target.closest?.('[data-dashboard-app-card]');
+    if (!card || card.dataset.dashboardAppCard === dragAppId) return;
+    const grid = card.closest('[data-dashboard-grid]');
+    if (!grid || grid !== dragOriginGrid) return;
+    event.preventDefault();
+    const draggedId = dragAppId;
+    const targetId = card.dataset.dashboardAppCard;
+    const after = dropIntent(card, event.clientX);
+    dragAppId = null;
+    dragOriginGrid = null;
+    suppressLaunchUntil = Date.now() + 350;
+    moveApp(draggedId, targetId, after);
+  });
+
+  document.addEventListener('dragend', () => {
+    dragAppId = null;
+    dragOriginGrid = null;
+    clearDropIndicators();
+  });
+
+  document.addEventListener('pointerdown', event => {
+    if (event.pointerType !== 'touch' || dashboardQuery.trim()) return;
+    const card = event.target.closest?.('[data-dashboard-app-card]');
+    if (!card || event.target.closest('.dashboard-menu-wrap')) return;
+    clearTouchDrag();
+    touchDrag.appId = card.dataset.dashboardAppCard;
+    touchDrag.startX = event.clientX;
+    touchDrag.startY = event.clientY;
+    touchDrag.originGrid = card.closest('[data-dashboard-grid]');
+    touchDrag.timer = setTimeout(() => {
+      touchDrag.timer = null;
+      touchDrag.active = true;
+      card.classList.add('touch-dragging');
+      closeDashboardMenus();
+      createTouchGhost(card, event.clientX, event.clientY);
+    }, 280);
+  });
+
+  document.addEventListener('pointermove', event => {
+    if (event.pointerType !== 'touch' || !touchDrag.appId) return;
+    if (!touchDrag.active) {
+      if (Math.abs(event.clientX - touchDrag.startX) > 10 || Math.abs(event.clientY - touchDrag.startY) > 10) clearTouchDrag();
+      return;
+    }
+    event.preventDefault();
+    moveTouchGhost(event.clientX, event.clientY);
+    const pointed = document.elementFromPoint(event.clientX, event.clientY);
+    const card = pointed?.closest?.('[data-dashboard-app-card]');
+    const grid = card?.closest?.('[data-dashboard-grid]');
+    if (!card || grid !== touchDrag.originGrid || card.dataset.dashboardAppCard === touchDrag.appId) {
+      touchDrag.targetId = null;
+      clearDropIndicators();
+      document.querySelector(`[data-dashboard-app-card="${touchDrag.appId}"]`)?.classList.add('touch-dragging');
+      return;
+    }
+    touchDrag.targetId = card.dataset.dashboardAppCard;
+    touchDrag.after = dropIntent(card, event.clientX);
+    markDropTarget(card, touchDrag.after);
+  }, { passive:false });
+
+  function finishTouchDrag() {
+    if (!touchDrag.appId) return;
+    if (!touchDrag.active) {
+      clearTouchDrag();
+      return;
+    }
+    const draggedId = touchDrag.appId;
+    const targetId = touchDrag.targetId;
+    const after = touchDrag.after;
+    suppressLaunchUntil = Date.now() + 500;
+    clearTouchDrag();
+    if (targetId) moveApp(draggedId, targetId, after);
+  }
+
+  document.addEventListener('pointerup', event => {
+    if (event.pointerType === 'touch') finishTouchDrag();
+  });
+  document.addEventListener('pointercancel', event => {
+    if (event.pointerType === 'touch') clearTouchDrag();
+  });
+
   document.addEventListener('click', event => {
+    const shell = $('#campusAppsShell');
+    if (event.target === shell) {
+      close();
+      return;
+    }
+
     const menuButton = event.target.closest('[data-dashboard-menu]');
     if (menuButton) {
       event.stopPropagation();
@@ -347,13 +578,14 @@
       return;
     }
 
-    if (event.target.closest('#campusDashboardClose') || event.target.closest('#campusAppsClose')) {
+    if (event.target.closest('#campusAppsClose')) {
       close();
       return;
     }
 
     if (event.target.closest('#campusAppsBack')) {
       render('dashboard');
+      $('#campusDashboardSearch')?.focus();
       return;
     }
 
