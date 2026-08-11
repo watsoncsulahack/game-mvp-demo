@@ -43,6 +43,11 @@
   let dragAppId = null;
   let dragOriginGrid = null;
   let suppressLaunchUntil = 0;
+  let walletRoute = 'overview';
+  let walletPending = null;
+  let walletComplete = null;
+  let walletMenuOpen = false;
+  let walletProcessingTimer = null;
 
   const touchDrag = {
     timer:null,
@@ -61,13 +66,14 @@
     '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
   })[character]);
   const amount = value => `${Number(value).toFixed(2)} TEST`;
+  const walletMoney = value => new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' }).format(Math.abs(Number(value) || 0));
   const email = () => ($('#reviewEmail')?.textContent || $('#studentEmail')?.value || 'student@university.edu').trim().toLowerCase();
   const key = () => PREFIX + email();
   const pinKey = () => DASHBOARD_PIN_PREFIX + email();
   const orderKey = () => DASHBOARD_ORDER_PREFIX + email();
 
   function fresh() {
-    return { email:email(), balance:0, faucetClaimed:false, transactions:[], orders:[], entitlements:[] };
+    return { email:email(), balance:0, faucetClaimed:false, transactions:[], orders:[], entitlements:[], address:demoAddress(email()) };
   }
 
   function load() {
@@ -77,6 +83,10 @@
     } catch {
       session = fresh();
     }
+    if (!session.address) session.address = demoAddress(session.email);
+    if (!Array.isArray(session.transactions)) session.transactions = [];
+    if (!Array.isArray(session.orders)) session.orders = [];
+    if (!Array.isArray(session.entitlements)) session.entitlements = [];
     return session;
   }
 
@@ -94,13 +104,35 @@
     toastTimer = setTimeout(() => { element.hidden = true; }, 2600);
   }
 
-  function addTx(delta, label) {
+  function addTx(delta, label, extra = {}) {
     session.transactions.unshift({
       id:`TX-${Date.now().toString(36).toUpperCase()}`,
       amount:delta,
       label,
-      at:new Date().toLocaleString()
+      at:new Date().toLocaleString(),
+      createdAt:Date.now(),
+      ...extra
     });
+  }
+
+  function demoAddress(value) {
+    const text = `campus-wallet-reference:${String(value).trim().toLowerCase()}`;
+    const words = [];
+    for (let seed = 0; seed < 5; seed += 1) {
+      let hash = (0x811c9dc5 ^ Math.imul(seed + 1, 0x9e3779b1)) >>> 0;
+      for (let i = 0; i < text.length; i += 1) {
+        hash ^= text.charCodeAt(i) + seed * 17;
+        hash = Math.imul(hash, 0x01000193) >>> 0;
+        hash ^= hash >>> 13;
+      }
+      words.push(hash.toString(16).padStart(8, '0'));
+    }
+    return `0x${words.join('')}`;
+  }
+
+  function shortenAddress(address) {
+    const value = String(address || '');
+    return value.length > 12 ? `${value.slice(0, 6)}…${value.slice(-4)}` : value;
   }
 
   function getPins() {
@@ -225,11 +257,146 @@
     </div>`;
   }
 
+  function walletIcon(type, incoming = false) {
+    if (type === 'received' || incoming) return '<path d="M12 4v15m6-6-6 6-6-6"/>';
+    if (type === 'created') return '<rect x="4" y="6" width="16" height="12" rx="3"/><path d="M14 10h7v4h-7a2 2 0 0 1 0-4Z"/>';
+    return '<path d="M7 17 17 7M9 7h8v8"/>';
+  }
+
+  function walletTransactionMarkup(transaction) {
+    const delta = Number(transaction.amount || 0);
+    const incoming = delta > 0;
+    const type = transaction.kind || (incoming ? 'received' : 'sent');
+    const title = transaction.label || (incoming ? 'Received test funds' : 'Test-network transfer');
+    let subtitle = transaction.at || 'Test network';
+    if (transaction.recipient) subtitle = `To ${shortenAddress(transaction.recipient)}`;
+    const displayAmount = delta === 0 ? '' : `${delta > 0 ? '+ ' : '− '}${walletMoney(delta)} TEST`;
+    return `<div class="cw-transaction-row">
+      <span class="cw-transaction-icon${incoming ? ' incoming' : ''}"><svg viewBox="0 0 24 24" aria-hidden="true">${walletIcon(type, incoming)}</svg></span>
+      <span><b>${esc(title)}</b><small>${esc(subtitle)}</small></span>
+      <strong class="${incoming ? 'positive' : ''}">${displayAmount}</strong>
+    </div>`;
+  }
+
+  function walletActivityMarkup(transactions, emptyAction = true) {
+    if (!transactions.length) {
+      return `<div class="cw-empty-state"><b>No transactions yet</b><p>Use Campus Faucet to add test funds to this connected wallet.</p>${emptyAction ? '<button class="cw-fund-button" type="button" data-wallet-open-faucet>Open Campus Faucet</button>' : ''}</div>`;
+    }
+    return transactions.map(walletTransactionMarkup).join('');
+  }
+
+  function walletOverview() {
+    const recent = session.transactions.slice(0, 3);
+    return `<section class="cw-content-view" data-wallet-view="overview">
+      <header class="cw-page-heading"><div><span class="cw-eyebrow">Wallet overview</span><h1>Overview</h1><p>Your test-network wallet and recent activity.</p></div></header>
+      <section class="cw-balance-card cw-card">
+        <div><span class="cw-metric-label">Available balance</span><strong>${walletMoney(session.balance)}</strong><small>TEST</small></div>
+        <span class="cw-network-badge muted"><i></i> Test network</span>
+      </section>
+      <div class="cw-quick-actions">
+        <button type="button" data-wallet-route="send"><span class="cw-quick-icon"><svg viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg></span><span><b>Send</b><small>Transfer funds</small></span><strong>→</strong></button>
+        <button type="button" data-wallet-route="receive"><span class="cw-quick-icon"><svg viewBox="0 0 24 24"><path d="m17 7-10 10m8 0H7V9"/></svg></span><span><b>Receive</b><small>Share wallet details</small></span><strong>→</strong></button>
+        <button type="button" data-wallet-route="activity"><span class="cw-quick-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg></span><span><b>Activity</b><small>Review transactions</small></span><strong>→</strong></button>
+      </div>
+      <section class="cw-activity-card cw-card">
+        <div class="cw-section-heading"><div><span class="cw-metric-label">Recent activity</span><p>Latest account updates</p></div><button type="button" data-wallet-route="activity">View all</button></div>
+        <div>${walletActivityMarkup(recent)}</div>
+      </section>
+    </section>`;
+  }
+
+  function walletReceive() {
+    return `<section class="cw-content-view narrow" data-wallet-view="receive">
+      <header class="cw-page-heading"><div><span class="cw-eyebrow">Receive</span><h1>Receive funds</h1><p>Share the wallet address below with a sender.</p></div></header>
+      <section class="cw-detail-card cw-card">
+        <span class="cw-metric-label">Wallet address</span>
+        <div class="cw-address-box"><code>${esc(session.address)}</code><button type="button" data-wallet-copy-address><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><span>Copy</span></button></div>
+        <dl class="cw-detail-list"><div><dt>Network</dt><dd>Test network</dd></div><div><dt>Account owner</dt><dd>${esc(session.email)}</dd></div></dl>
+        <div class="cw-button-row"><button class="cw-button secondary" type="button" data-wallet-route="overview">Done</button></div>
+      </section>
+    </section>`;
+  }
+
+  function walletSend() {
+    return `<section class="cw-content-view narrow" data-wallet-view="send">
+      <header class="cw-page-heading"><div><span class="cw-eyebrow">Send</span><h1>Send funds</h1><p>Create a test-network transfer.</p></div></header>
+      <form class="cw-form-card cw-card" id="walletTransferForm" novalidate>
+        <label for="walletRecipient">Recipient wallet</label><input id="walletRecipient" name="recipient" placeholder="0x71C4...92F8" autocomplete="off">
+        <label for="walletAmount">Amount</label><div class="cw-amount-field"><span>$</span><input id="walletAmount" name="amount" inputmode="decimal" placeholder="0.00"><b>TEST</b></div>
+        <label for="walletNote">Note <span>(optional)</span></label><input id="walletNote" name="note" placeholder="Shared project expense" maxlength="80">
+        <div class="cw-form-meta"><span>Available balance</span><strong>${walletMoney(session.balance)} TEST</strong></div>
+        <p class="cw-field-error" id="walletTransferError" role="alert"></p>
+        <button class="cw-button primary" type="submit">Review transfer <span aria-hidden="true">→</span></button>
+      </form>
+    </section>`;
+  }
+
+  function walletReview() {
+    const pending = walletPending || { amount:0, recipient:'—' };
+    return `<section class="cw-content-view narrow" data-wallet-view="review">
+      <header class="cw-page-heading"><div><span class="cw-eyebrow">Confirmation</span><h1>Review transfer</h1><p>Confirm the details before submitting.</p></div></header>
+      <section class="cw-detail-card cw-card cw-review-card">
+        <dl class="cw-review-list"><div><dt>You send</dt><dd>${walletMoney(pending.amount)} TEST</dd></div><div><dt>To</dt><dd>${esc(shortenAddress(pending.recipient))}</dd></div><div><dt>Network</dt><dd>Test network</dd></div><div><dt>Fee</dt><dd>$0.00 TEST</dd></div></dl>
+        <p class="cw-safety-note"><svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3.3 8 8 9 4.7-1 8-4 8-9V7Z"/><path d="m9 12 2 2 4-4"/></svg> Demo transaction — no real funds are moved.</p>
+        <div class="cw-button-row split"><button class="cw-button secondary" type="button" data-wallet-route="send">Cancel</button><button class="cw-button primary" type="button" data-wallet-confirm>Confirm and send</button></div>
+      </section>
+    </section>`;
+  }
+
+  function walletProcessing() {
+    return `<section class="cw-content-view centered" data-wallet-view="processing"><div class="cw-status-card cw-card"><div class="cw-spinner" aria-hidden="true"></div><span class="cw-eyebrow">Submitting transfer</span><h1>Processing…</h1><p>Your test-network transaction is being processed.</p><small>Keep this wallet open for a moment.</small></div></section>`;
+  }
+
+  function walletCompleteView() {
+    const complete = walletComplete || { amount:0, recipient:'—', id:'—' };
+    return `<section class="cw-content-view centered" data-wallet-view="complete"><div class="cw-status-card cw-card cw-complete-card"><div class="cw-success-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m9 16 5 5 10-11"/></svg></div><span class="cw-eyebrow">Transaction confirmed</span><h1>Transfer complete</h1><p><strong>${walletMoney(complete.amount)} TEST</strong> was sent successfully.</p><dl class="cw-detail-list compact"><div><dt>Recipient</dt><dd>${esc(shortenAddress(complete.recipient))}</dd></div><div><dt>Transaction</dt><dd>${esc(shortenAddress(complete.id))}</dd></div></dl><div class="cw-button-row split"><button class="cw-button secondary" type="button" data-wallet-route="activity">View activity</button><button class="cw-button primary" type="button" data-wallet-route="overview">Done</button></div></div></section>`;
+  }
+
+  function walletActivity() {
+    return `<section class="cw-content-view" data-wallet-view="activity"><header class="cw-page-heading"><div><span class="cw-eyebrow">History</span><h1>Activity</h1><p>Test-network wallet transactions and account events.</p></div></header><section class="cw-activity-card cw-card"><div>${walletActivityMarkup(session.transactions, false)}</div></section></section>`;
+  }
+
+  function walletContent() {
+    if (walletRoute === 'receive') return walletReceive();
+    if (walletRoute === 'send') return walletSend();
+    if (walletRoute === 'review') return walletReview();
+    if (walletRoute === 'processing') return walletProcessing();
+    if (walletRoute === 'complete') return walletCompleteView();
+    if (walletRoute === 'activity') return walletActivity();
+    return walletOverview();
+  }
+
   function wallet() {
-    const rows = session.transactions.length
-      ? session.transactions.map(transaction => `<div class="wallet-row"><span><strong>${esc(transaction.label)}</strong><small>${esc(transaction.at)}</small></span><b class="${transaction.amount >= 0 ? 'positive' : 'negative'}">${transaction.amount >= 0 ? '+' : ''}${amount(transaction.amount)}</b></div>`).join('')
-      : '<div class="mini-empty">Wallet is empty. Open Campus Faucet to add test funds.</div>';
-    return `<section class="mini-app"><div class="wallet-overview"><span>Available balance</span><strong>${amount(session.balance)}</strong><small>${esc(session.email)}</small></div><h3>Recent activity</h3><div class="wallet-list">${rows}</div></section>`;
+    const activeRoute = walletRoute === 'review' || walletRoute === 'processing' || walletRoute === 'complete' ? 'send' : walletRoute;
+    return `<section class="cw-shell" aria-label="Campus Wallet">
+      <header class="cw-topbar">
+        <button class="cw-mobile-menu" type="button" data-wallet-menu aria-label="Open wallet navigation" aria-expanded="${walletMenuOpen}"><span></span><span></span></button>
+        <button class="cw-wordmark compact" type="button" data-wallet-route="overview" aria-label="Campus Wallet overview">
+          <span class="cw-wallet-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="6" y="8" width="20" height="16" rx="5"/><path d="M20 13h7v7h-7a3.5 3.5 0 0 1 0-7Z"/><circle cx="21" cy="16.5" r="1"/></svg></span>
+          <span><strong>Campus Wallet</strong><small>Reference interface</small></span>
+        </button>
+        <div class="cw-account-context">
+          <span class="cw-network-badge"><i></i> Test network</span>
+          <button class="cw-identity-button" type="button" data-wallet-account title="Linked to Campus Buddy">
+            <span class="cw-identity-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 18c1.8-2.6 4-3.9 7-3.9s5.2 1.3 7 3.9M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg></span>
+            <span><b>${esc(session.email)}</b><small>${esc(shortenAddress(session.address))}</small></span>
+          </button>
+        </div>
+      </header>
+      <div class="cw-frame">
+        <aside class="cw-sidebar${walletMenuOpen ? ' open' : ''}">
+          <nav aria-label="Wallet navigation">
+            <button class="cw-nav-item${activeRoute === 'overview' ? ' active' : ''}" type="button" data-wallet-route="overview"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M15 10h7v5h-7a2.5 2.5 0 0 1 0-5Z"/></svg><span>Overview</span></button>
+            <button class="cw-nav-item${activeRoute === 'send' ? ' active' : ''}" type="button" data-wallet-route="send"><svg viewBox="0 0 24 24"><path d="M12 20V5m-6 6 6-6 6 6"/></svg><span>Send</span></button>
+            <button class="cw-nav-item${activeRoute === 'receive' ? ' active' : ''}" type="button" data-wallet-route="receive"><svg viewBox="0 0 24 24"><path d="M12 4v15m6-6-6 6-6-6"/></svg><span>Receive</span></button>
+            <button class="cw-nav-item${activeRoute === 'activity' ? ' active' : ''}" type="button" data-wallet-route="activity"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span>Activity</span></button>
+          </nav>
+          <div class="cw-sidebar-footer"><span><i></i> Network: Test</span><small>Identity managed by Campus Buddy</small></div>
+        </aside>
+        <button class="cw-scrim${walletMenuOpen ? ' open' : ''}" type="button" data-wallet-scrim aria-label="Close wallet navigation"></button>
+        <main class="cw-main">${walletContent()}</main>
+      </div>
+    </section>`;
   }
 
   function faucet() {
@@ -245,21 +412,28 @@
 
   function browserLocation(view) {
     if (view === 'dashboard') return 'my.csulb.edu/apps';
+    if (view === 'wallet') return `wallet.campus.local/#${walletRoute}`;
     return `campus.local/${view}`;
   }
 
   function render(view = active) {
     active = view;
     const dashboardMode = view === 'dashboard';
+    const walletMode = view === 'wallet';
     $('#campusAppsShell').classList.toggle('dashboard-mode', dashboardMode);
+    $('#campusAppsShell').classList.toggle('wallet-mode', walletMode);
     $('#campusAppsTitle').textContent = browserLocation(view);
-    $('#campusAppsBack').hidden = dashboardMode;
-    $('#campusAppsContent').innerHTML = dashboardMode ? dashboard() : view === 'wallet' ? wallet() : view === 'faucet' ? faucet() : bookstore();
+    const back = $('#campusAppsBack');
+    back.hidden = false;
+    back.disabled = dashboardMode;
+    back.setAttribute('aria-disabled', String(dashboardMode));
+    $('#campusAppsContent').innerHTML = dashboardMode ? dashboard() : walletMode ? wallet() : view === 'faucet' ? faucet() : bookstore();
   }
 
   function open(view = 'dashboard') {
     load();
     dashboardQuery = '';
+    if (view === 'wallet') walletRoute = 'overview';
     render(view);
     $('#campusAppsShell').hidden = false;
     const focusTarget = view === 'dashboard' ? $('#campusDashboardSearch') : $('#campusAppsClose');
@@ -267,9 +441,12 @@
   }
 
   function close() {
+    clearTimeout(walletProcessingTimer);
+    walletProcessingTimer = null;
     clearTouchDrag();
     dragAppId = null;
     dragOriginGrid = null;
+    walletMenuOpen = false;
     $('#campusAppsShell').hidden = true;
   }
 
@@ -277,7 +454,7 @@
     if (session.faucetClaimed) return;
     session.faucetClaimed = true;
     session.balance += 100;
-    addTx(100, 'Campus Faucet allocation');
+    addTx(100, 'Campus Faucet allocation', { kind:'received', source:'Campus Faucet' });
     save();
     render('faucet');
     notify('100 TEST added to Campus Wallet.');
@@ -291,7 +468,7 @@
       return;
     }
     session.balance -= product.price;
-    addTx(-product.price, `Campus Bookstore · ${product.name}`);
+    addTx(-product.price, `Campus Bookstore · ${product.name}`, { kind:'purchase', merchant:'Campus Bookstore' });
     session.orders.unshift({ id:`ORDER-${Date.now().toString(36).toUpperCase()}`, productId:product.id, name:product.name, price:product.price });
     if (product.unlock && !session.entitlements.some(entitlement => entitlement.productId === product.id)) {
       session.entitlements.push({ productId:product.id, label:product.unlock.label, outfit:product.unlock.value });
@@ -306,6 +483,62 @@
     if (!entitlement) return;
     document.querySelector(`[data-outfit="${entitlement.outfit}"]`)?.click();
     notify(`${entitlement.label} equipped on Buddy.`);
+  }
+
+  function setWalletRoute(route) {
+    const allowed = new Set(['overview','send','receive','review','processing','complete','activity']);
+    walletRoute = allowed.has(route) ? route : 'overview';
+    walletMenuOpen = false;
+    render('wallet');
+  }
+
+  function validateWalletTransfer(recipient, rawAmount) {
+    const cleanRecipient = String(recipient || '').trim();
+    if (!cleanRecipient) throw new Error('Enter a recipient wallet address.');
+    if (cleanRecipient.length < 6) throw new Error('Enter a complete recipient wallet address.');
+    const normalized = String(rawAmount || '').trim();
+    if (!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(normalized)) throw new Error('Enter an amount with no more than two decimal places.');
+    const parsed = Number(normalized);
+    if (!(parsed > 0)) throw new Error('Enter an amount greater than zero.');
+    if (parsed > session.balance + 0.000001) throw new Error('Amount exceeds the available balance.');
+    return { recipient:cleanRecipient, amount:Math.round(parsed * 100) / 100 };
+  }
+
+  function confirmWalletTransfer() {
+    if (!walletPending || walletRoute === 'processing') return;
+    const pending = { ...walletPending };
+    walletRoute = 'processing';
+    render('wallet');
+    clearTimeout(walletProcessingTimer);
+    walletProcessingTimer = setTimeout(() => {
+      session.balance = Math.max(0, Math.round((session.balance - pending.amount) * 100) / 100);
+      const id = `TX-${Date.now().toString(36).toUpperCase()}`;
+      session.transactions.unshift({
+        id,
+        amount:-pending.amount,
+        label:pending.note || 'Test-network transfer',
+        at:new Date().toLocaleString(),
+        createdAt:Date.now(),
+        kind:'sent',
+        recipient:pending.recipient,
+        note:pending.note || ''
+      });
+      save();
+      walletComplete = { amount:pending.amount, recipient:pending.recipient, id };
+      walletPending = null;
+      walletRoute = 'complete';
+      render('wallet');
+      notify('Transfer complete.');
+    }, 950);
+  }
+
+  async function copyWalletAddress() {
+    try {
+      await navigator.clipboard.writeText(session.address);
+      notify('Wallet address copied.');
+    } catch {
+      notify(`Wallet address: ${session.address}`);
+    }
   }
 
   function closeDashboardMenus(exceptId = null) {
@@ -330,6 +563,7 @@
   function launchDashboardApp(id) {
     if (Date.now() < suppressLaunchUntil) return;
     if (INTEGRATED_IDS.has(id)) {
+      if (id === 'wallet') walletRoute = 'overview';
       render(id);
       $('#campusAppsClose')?.focus();
       return;
@@ -434,6 +668,23 @@
       const input = $('#campusDashboardSearch');
       input?.focus();
       input?.setSelectionRange(dashboardQuery.length, dashboardQuery.length);
+    }
+  });
+
+  document.addEventListener('submit', event => {
+    if (!event.target.matches('#walletTransferForm')) return;
+    event.preventDefault();
+    const recipient = $('#walletRecipient')?.value || '';
+    const rawAmount = $('#walletAmount')?.value || '';
+    const note = $('#walletNote')?.value?.trim() || '';
+    try {
+      const transfer = validateWalletTransfer(recipient, rawAmount);
+      walletPending = { ...transfer, note };
+      walletRoute = 'review';
+      render('wallet');
+    } catch (error) {
+      const target = $('#walletTransferError');
+      if (target) target.textContent = error.message;
     }
   });
 
@@ -584,8 +835,51 @@
     }
 
     if (event.target.closest('#campusAppsBack')) {
-      render('dashboard');
-      $('#campusDashboardSearch')?.focus();
+      if (active !== 'dashboard') {
+        clearTimeout(walletProcessingTimer);
+        walletProcessingTimer = null;
+        walletMenuOpen = false;
+        render('dashboard');
+        $('#campusDashboardSearch')?.focus();
+      }
+      return;
+    }
+
+    const walletRouteButton = event.target.closest('[data-wallet-route]');
+    if (walletRouteButton) {
+      setWalletRoute(walletRouteButton.dataset.walletRoute);
+      return;
+    }
+
+    if (event.target.closest('[data-wallet-confirm]')) {
+      confirmWalletTransfer();
+      return;
+    }
+
+    if (event.target.closest('[data-wallet-copy-address]')) {
+      copyWalletAddress();
+      return;
+    }
+
+    if (event.target.closest('[data-wallet-open-faucet]')) {
+      render('faucet');
+      return;
+    }
+
+    if (event.target.closest('[data-wallet-account]')) {
+      notify('Campus Wallet is linked to your Buddy account.');
+      return;
+    }
+
+    if (event.target.closest('[data-wallet-menu]')) {
+      walletMenuOpen = !walletMenuOpen;
+      render('wallet');
+      return;
+    }
+
+    if (event.target.closest('[data-wallet-scrim]')) {
+      walletMenuOpen = false;
+      render('wallet');
       return;
     }
 
