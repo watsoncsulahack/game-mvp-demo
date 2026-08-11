@@ -10,180 +10,42 @@
   <link rel="stylesheet" href="styles/onboarding.css">
   <link rel="stylesheet" href="styles/game.css">
   <link rel="stylesheet" href="styles/overlays.css">
+  <link rel="stylesheet" href="styles/campus-apps.css">
 </head>
 <body>
   <main id="app" class="app">
     <section id="onboarding" class="onboarding" aria-label="Buddy onboarding">
       <div class="onboarding-shell">
-        <header class="onboarding-header">
-          <a class="brand" href="#" aria-label="Campus Buddy home"><strong>Campus Buddy</strong></a>
-          <ol class="stepper" aria-label="Onboarding progress">
-            <li class="active" data-step-dot="1"><b>1</b><span>Campus ID</span></li>
-            <li data-step-dot="2"><b>2</b><span>Design Buddy</span></li>
-            <li data-step-dot="3"><b>3</b><span>Review</span></li>
-          </ol>
-        </header>
-
+        <header class="onboarding-header"><a class="brand" href="#" aria-label="Campus Buddy home"><strong>Campus Buddy</strong></a><ol class="stepper" aria-label="Onboarding progress"><li class="active" data-step-dot="1"><b>1</b><span>Campus ID</span></li><li data-step-dot="2"><b>2</b><span>Design Buddy</span></li><li data-step-dot="3"><b>3</b><span>Review</span></li></ol></header>
         <div class="onboarding-body">
-          <aside class="art-card" aria-label="Interactive Buddy artwork">
-            <div class="art-grid"></div>
-            <div id="artViewport" class="art-viewport" tabindex="0" aria-label="Rotate Buddy. Front view. Drag horizontally or use Left and Right Arrow keys.">
-              <div id="fullArtPreview" class="full-art-preview"></div>
-              <span class="drag-hint">↔ Drag to rotate</span>
-              <div class="rotation-controls" role="group" aria-label="Buddy rotation controls">
-                <button id="rotateBuddyLeft" type="button" aria-label="Rotate Buddy left">‹</button>
-                <span id="rotationStatus" aria-live="polite">Front · 0°</span>
-                <button id="rotateBuddyRight" type="button" aria-label="Rotate Buddy right">›</button>
-              </div>
-            </div>
-          </aside>
-
+          <aside class="art-card" aria-label="Interactive Buddy artwork"><div class="art-grid"></div><div id="artViewport" class="art-viewport" tabindex="0" aria-label="Rotate Buddy. Front view. Drag horizontally or use Left and Right Arrow keys."><div id="fullArtPreview" class="full-art-preview"></div><span class="drag-hint">↔ Drag to rotate</span><div class="rotation-controls" role="group" aria-label="Buddy rotation controls"><button id="rotateBuddyLeft" type="button" aria-label="Rotate Buddy left">‹</button><span id="rotationStatus" aria-live="polite">Front · 0°</span><button id="rotateBuddyRight" type="button" aria-label="Rotate Buddy right">›</button></div></div></aside>
           <section class="onboarding-panel">
-            <section class="onboarding-step" data-step="1">
-              <span class="eyebrow">Step 1 of 3 · Campus identity</span>
-              <h1>Create your Buddy.</h1>
-              <p>A practical digital companion that helps you learn, plan, organize, and reflect.</p>
-              <form id="identityForm" class="identity-form" novalidate>
-                <label>University email
-                  <input id="studentEmail" type="email" autocomplete="email" placeholder="student@university.edu" required>
-                </label>
-                <p id="identityError" class="form-error" role="alert"></p>
-                <div class="primary-actions">
-                  <button id="sampleProfile" class="button primary" type="button">Start sample profile</button>
-                  <button class="button secondary" type="submit">Use university email</button>
-                </div>
-              </form>
-            </section>
-
-            <section class="onboarding-step design-step" data-step="2" hidden>
-              <div class="step-copy">
-                <span class="eyebrow">Step 2 of 3 · Design Buddy</span>
-                <h1>Tune your Buddy.</h1>
-              </div>
-              <form id="designForm" class="design-grid" novalidate>
-                <div class="design-fields">
-                  <label>Buddy name
-                    <input id="buddyName" type="text" value="Mika" maxlength="18" required>
-                  </label>
-                  <fieldset>
-                    <legend>Starting disposition</legend>
-                    <div id="dispositionChoices" class="chip-row"></div>
-                    <small id="dispositionHelp">Curious Buddies ask follow-up questions and notice patterns.</small>
-                  </fieldset>
-                  <fieldset>
-                    <legend>Eye color</legend>
-                    <div class="hue-control"><input id="eyeHue" type="range" min="0" max="360" value="240" aria-label="Eye color hue"><output id="eyeColorOutput">#171923</output></div>
-                  </fieldset>
-                  <fieldset>
-                    <legend>Body color</legend>
-                    <div class="hue-control"><input id="bodyHue" type="range" min="0" max="360" value="187" aria-label="Body color hue"><output id="bodyColorOutput">#F7FBFC</output></div>
-                  </fieldset>
-                  <fieldset>
-                    <legend>Hair style</legend>
-                    <div id="hairChoices" class="chip-row"></div>
-                  </fieldset>
-                  <fieldset id="hairColorField" hidden>
-                    <legend>Hair color</legend>
-                    <div class="hue-control"><input id="hairHue" type="range" min="0" max="360" value="215" aria-label="Hair color hue"><output id="hairColorOutput">#26354D</output></div>
-                  </fieldset>
-                  <fieldset>
-                    <legend>Starter clothing</legend>
-                    <div id="outfitChoices" class="chip-row"></div>
-                  </fieldset>
-                  <p id="designError" class="form-error" role="alert"></p>
-                </div>
-                <div class="step-actions">
-                  <button id="designBack" class="button secondary" type="button">Back</button>
-                  <button class="button primary" type="submit">Continue to review</button>
-                </div>
-              </form>
-            </section>
-
-            <section class="onboarding-step review-step" data-step="3" hidden>
-              <span class="eyebrow">Step 3 of 3 · Final review</span>
-              <h1>Ready to initialize.</h1>
-              <dl class="review-list">
-                <div><dt>Buddy</dt><dd id="reviewName">Mika</dd></div>
-                <div><dt>Disposition</dt><dd id="reviewDisposition">Curious</dd></div>
-                <div><dt>Student</dt><dd id="reviewEmail">student@university.edu</dd></div>
-                <div><dt>Campus</dt><dd id="reviewCampus">University</dd></div>
-                <div><dt>Local identity</dt><dd id="reviewIdentity">BUDDY-000000</dd></div>
-              </dl>
-              <fieldset class="review-home-choice">
-                <legend>Choose your starting Home</legend>
-                <div class="room-choice-grid">
-                  <button class="room-card selected" type="button" data-room="sunlit"><canvas width="264" height="156" data-room-preview="sunlit"></canvas><span>Fresh Daytime Dorm</span></button>
-                  <button class="room-card" type="button" data-room="tech"><canvas width="264" height="156" data-room-preview="tech"></canvas><span>Gamer Dorm</span></button>
-                  <button class="room-card" type="button" data-room="creative"><canvas width="264" height="156" data-room-preview="creative"></canvas><span>Cozy Warm Dorm</span></button>
-                </div>
-              </fieldset>
-              <div class="step-actions">
-                <button id="reviewBack" class="button secondary" type="button">Back</button>
-                <button id="initializeBuddy" class="button primary" type="button">Initialize Buddy</button>
-              </div>
-            </section>
+            <section class="onboarding-step" data-step="1"><span class="eyebrow">Step 1 of 3 · Campus identity</span><h1>Create your Buddy.</h1><p>A practical digital companion that helps you learn, plan, organize, and reflect.</p><form id="identityForm" class="identity-form" novalidate><label>University email<input id="studentEmail" type="email" autocomplete="email" placeholder="student@university.edu" required></label><p id="identityError" class="form-error" role="alert"></p><div class="primary-actions"><button id="sampleProfile" class="button primary" type="button">Start sample profile</button><button class="button secondary" type="submit">Use university email</button></div></form></section>
+            <section class="onboarding-step design-step" data-step="2" hidden><div class="step-copy"><span class="eyebrow">Step 2 of 3 · Design Buddy</span><h1>Tune your Buddy.</h1></div><form id="designForm" class="design-grid" novalidate><div class="design-fields"><label>Buddy name<input id="buddyName" type="text" value="Mika" maxlength="18" required></label><fieldset><legend>Starting disposition</legend><div id="dispositionChoices" class="chip-row"></div><small id="dispositionHelp">Curious Buddies ask follow-up questions and notice patterns.</small></fieldset><fieldset><legend>Eye color</legend><div class="hue-control"><input id="eyeHue" type="range" min="0" max="360" value="240" aria-label="Eye color hue"><output id="eyeColorOutput">#171923</output></div></fieldset><fieldset><legend>Body color</legend><div class="hue-control"><input id="bodyHue" type="range" min="0" max="360" value="187" aria-label="Body color hue"><output id="bodyColorOutput">#F7FBFC</output></div></fieldset><fieldset><legend>Hair style</legend><div id="hairChoices" class="chip-row"></div></fieldset><fieldset id="hairColorField" hidden><legend>Hair color</legend><div class="hue-control"><input id="hairHue" type="range" min="0" max="360" value="215" aria-label="Hair color hue"><output id="hairColorOutput">#26354D</output></div></fieldset><fieldset><legend>Starter clothing</legend><div id="outfitChoices" class="chip-row"></div></fieldset><p id="designError" class="form-error" role="alert"></p></div><div class="step-actions"><button id="designBack" class="button secondary" type="button">Back</button><button class="button primary" type="submit">Continue to review</button></div></form></section>
+            <section class="onboarding-step review-step" data-step="3" hidden><span class="eyebrow">Step 3 of 3 · Final review</span><h1>Ready to initialize.</h1><dl class="review-list"><div><dt>Buddy</dt><dd id="reviewName">Mika</dd></div><div><dt>Disposition</dt><dd id="reviewDisposition">Curious</dd></div><div><dt>Student</dt><dd id="reviewEmail">student@university.edu</dd></div><div><dt>Campus</dt><dd id="reviewCampus">University</dd></div><div><dt>Local identity</dt><dd id="reviewIdentity">BUDDY-000000</dd></div></dl><fieldset class="review-home-choice"><legend>Choose your starting Home</legend><div class="room-choice-grid"><button class="room-card selected" type="button" data-room="sunlit"><canvas width="264" height="156" data-room-preview="sunlit"></canvas><span>Fresh Daytime Dorm</span></button><button class="room-card" type="button" data-room="tech"><canvas width="264" height="156" data-room-preview="tech"></canvas><span>Gamer Dorm</span></button><button class="room-card" type="button" data-room="creative"><canvas width="264" height="156" data-room-preview="creative"></canvas><span>Cozy Warm Dorm</span></button></div></fieldset><div class="step-actions"><button id="reviewBack" class="button secondary" type="button">Back</button><button id="initializeBuddy" class="button primary" type="button">Initialize Buddy</button></div></section>
           </section>
         </div>
-
-        <section id="initialization" class="initialization" hidden aria-live="polite">
-          <div class="initialization-card">
-            <div id="initArt" class="init-art"></div>
-            <div><span>BUDDY INITIALIZATION</span><h2 id="initStatus">Building local identity…</h2><div class="progress-track"><i id="initProgress"></i></div></div>
-          </div>
-        </section>
+        <section id="initialization" class="initialization" hidden aria-live="polite"><div class="initialization-card"><div id="initArt" class="init-art"></div><div><span>BUDDY INITIALIZATION</span><h2 id="initStatus">Building local identity…</h2><div class="progress-track"><i id="initProgress"></i></div></div></div></section>
       </div>
     </section>
 
     <section id="game" class="game" hidden aria-label="Buddy game">
-      <header class="game-header">
-        <div class="header-left"><button id="consoleButton" class="console-launch" type="button">Console Mode</button><div class="game-brand"><strong>Campus Buddy</strong><small id="worldLocation">Dorm · Day</small></div></div>
-        <div class="game-status"><time id="gameDate"></time><time id="gameTime"></time></div>
-        <button id="buddyPortraitButton" class="buddy-portrait-button" type="button" aria-label="Open Buddy quick chat"><span id="headerPortrait" class="header-portrait"></span><span><strong id="headerBuddyName">Mika</strong><small id="headerBuddyState">Relaxing in the room</small></span></button>
-      </header>
-
-      <div class="view-toolbar" role="toolbar" aria-label="Home view controls">
-        <div class="view-switch" role="group" aria-label="Switch Home view"><button id="roomViewButton" class="active" type="button">Home</button><button id="explorerViewButton" type="button">Explorer Mode</button></div>
-        <span id="viewHint">A close, composed view of the same room state.</span>
-        <button id="metaButton" class="meta-toggle" type="button">Demo tools</button>
-      </div>
-
-      <div id="metaBar" class="meta-bar" hidden>
-        <span>Demo tools</span>
-        <button type="button" data-time="day">Day</button><button type="button" data-time="sunset">Sunset</button><button type="button" data-time="night">Night</button>
-        <button type="button" data-activity="center">Center</button><button type="button" data-activity="desk">Desk</button><button type="button" data-activity="bed">Bed</button><button type="button" data-activity="bookshelf">Bookshelf</button><button type="button" data-meta-close>Close</button>
-      </div>
-
+      <header class="game-header"><div class="header-left"><button id="consoleButton" class="console-launch" type="button">Console Mode</button><div class="game-brand"><strong>Campus Buddy</strong><small id="worldLocation">Dorm · Day</small></div></div><div class="game-status"><time id="gameDate"></time><time id="gameTime"></time></div><button id="buddyPortraitButton" class="buddy-portrait-button" type="button" aria-label="Open Buddy quick chat"><span id="headerPortrait" class="header-portrait"></span><span><strong id="headerBuddyName">Mika</strong><small id="headerBuddyState">Relaxing in the room</small></span></button></header>
+      <div class="view-toolbar" role="toolbar" aria-label="Home view controls"><div class="view-switch" role="group" aria-label="Switch Home view"><button id="roomViewButton" class="active" type="button">Home</button><button id="explorerViewButton" type="button">Explorer Mode</button></div><span id="viewHint">A close, composed view of the same room state.</span><button id="metaButton" class="meta-toggle" type="button">Demo tools</button></div>
+      <div id="metaBar" class="meta-bar" hidden><span>Demo tools</span><button type="button" data-time="day">Day</button><button type="button" data-time="sunset">Sunset</button><button type="button" data-time="night">Night</button><button type="button" data-activity="center">Center</button><button type="button" data-activity="desk">Desk</button><button type="button" data-activity="bed">Bed</button><button type="button" data-activity="bookshelf">Bookshelf</button><button type="button" data-meta-close>Close</button></div>
       <section id="roomView" class="room-view" aria-label="Home"><div id="roomScene" class="room-scene"></div><div id="roomActionRing" class="room-action-ring" hidden><button type="button" data-room-action="talk">Talk</button><button type="button" data-room-action="check">Check in</button><button type="button" data-room-action="plan">Plan</button><button type="button" data-room-action="react">React</button></div><button id="roomBuddyHit" class="room-buddy-hit" type="button" aria-label="Select Buddy"></button></section>
-
-      <section id="explorerView" class="explorer-view" hidden aria-label="Explorer Mode">
-        <div class="explorer-frame">
-          <canvas id="worldCanvas" width="960" height="540" role="img" aria-label="Walkable dorm room"></canvas>
-          <div class="explorer-objective"><b>OBJECTIVE</b><span>Explore your Home or return to the composed view.</span></div>
-          <div class="mini-map"><strong>DORM</strong><canvas id="miniMap" width="136" height="92"></canvas></div>
-          <button id="worldPrompt" class="world-prompt" type="button" hidden><kbd>E</kbd><span id="worldPromptText">Interact</span></button>
-          <div class="touch-controls" role="group" aria-label="Explorer touch controls"><button type="button" data-move="up" aria-label="Move up">▲</button><button type="button" data-move="left" aria-label="Move left">◀</button><button type="button" data-interact aria-label="Interact">●</button><button type="button" data-move="right" aria-label="Move right">▶</button><button type="button" data-move="down" aria-label="Move down">▼</button></div>
-        </div>
-      </section>
-
+      <section id="explorerView" class="explorer-view" hidden aria-label="Explorer Mode"><div class="explorer-frame"><canvas id="worldCanvas" width="960" height="540" role="img" aria-label="Walkable dorm room"></canvas><div class="explorer-objective"><b>OBJECTIVE</b><span>Explore your Home or return to the composed view.</span></div><div class="mini-map"><strong>DORM</strong><canvas id="miniMap" width="136" height="92"></canvas></div><button id="worldPrompt" class="world-prompt" type="button" hidden><kbd>E</kbd><span id="worldPromptText">Interact</span></button><div class="touch-controls" role="group" aria-label="Explorer touch controls"><button type="button" data-move="up" aria-label="Move up">▲</button><button type="button" data-move="left" aria-label="Move left">◀</button><button type="button" data-interact aria-label="Interact">●</button><button type="button" data-move="right" aria-label="Move right">▶</button><button type="button" data-move="down" aria-label="Move down">▼</button></div></div></section>
       <nav class="game-dock" aria-label="Game applications"><button type="button" data-panel="agenda">▣<span>Agenda</span></button><button type="button" data-panel="journal">▤<span>Journal</span></button><button type="button" data-panel="collection">☆<span>Collection</span></button><button type="button" data-panel="customize">♙<span>Customize</span></button><button type="button" data-panel="campusweb">▦<span>Campus Web</span></button></nav>
     </section>
 
     <section id="dialogueMode" class="dialogue-mode" hidden role="dialog" aria-modal="true" aria-label="Dialogue Mode"><button id="dialogueBackdrop" class="dialogue-backdrop" type="button" aria-label="Close dialogue"></button><div class="dialogue-scene"><div id="dialogueBackground" class="dialogue-background"></div><div id="dialogueArt" class="dialogue-art"></div><div class="dialogue-box"><span id="dialogueName" class="speaker-name">Mika</span><p id="dialogueText">Hey. I am glad you are here.</p><div class="dialogue-choices"><button type="button" data-dialogue-choice="agenda">Let’s check today’s agenda.</button><button type="button" data-dialogue-choice="room">What do you think of the room?</button><button type="button" data-dialogue-choice="later">Let’s talk later.</button></div></div><button id="dialogueClose" class="dialogue-close" type="button" aria-label="Close dialogue">×</button></div></section>
-
     <section id="quickChat" class="quick-chat" hidden role="dialog" aria-modal="true" aria-label="Quick chat"><button class="quick-chat-backdrop" type="button" data-quick-close aria-label="Close quick chat"></button><div class="quick-chat-card"><div id="quickBust" class="quick-bust"></div><div><span id="quickSpeaker">Mika</span><p id="quickText">I am here. What should we look at?</p></div><button type="button" data-quick-close aria-label="Close">×</button></div></section>
-
     <section id="consoleMode" class="console-mode" hidden role="dialog" aria-modal="true" aria-label="Console Mode"><div class="console-device"><div class="console-frame-label">CONSOLE MODE</div><time id="consoleTime"></time><div class="console-screen"><button id="consoleBuddy" class="console-buddy" type="button" aria-label="Select Buddy Console form"></button><div id="consoleActions" class="console-actions" hidden><button type="button" data-console-tool="talk">Talk</button><button type="button" data-console-tool="brief">Brief</button><button type="button" data-console-tool="wallet">Wallet</button><button type="button" data-console-tool="calc">Calc</button><button type="button" data-console-tool="focus">Focus</button></div><button id="consoleRemark" class="console-remark" type="button">I saved your place in the dorm.</button><section id="consoleToolScreen" class="console-tool-screen" hidden><button id="consoleBack" type="button" aria-label="Back to Console home">B</button><div id="consoleToolContent" class="console-tool-content"></div></section></div><div class="console-controls"><button id="consoleMic" class="console-mic" type="button">MIC</button><div class="ab-buttons"><button id="consoleA" type="button">A</button><button id="consoleB" type="button">B</button></div><button id="consolePower" class="console-power" type="button" aria-label="Return Home">⏻</button></div></div></section>
-
     <section id="appPanel" class="app-panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle" hidden><button class="panel-backdrop" type="button" data-panel-close aria-label="Close panel"></button><div class="panel-shell"><header><div><span id="panelKicker">BUDDY</span><h2 id="panelTitle">Agenda</h2></div><button type="button" data-panel-close aria-label="Close panel">×</button></header><div id="panelContent" class="panel-content"></div></div></section>
 
+    <section id="campusAppsShell" class="campus-apps-shell" role="dialog" aria-modal="true" aria-labelledby="campusAppsTitle" hidden><div class="campus-apps-window"><header class="campus-apps-header"><button id="campusAppsBack" type="button" aria-label="Back to Apps Dashboard" hidden>←</button><h2 id="campusAppsTitle">Apps Dashboard</h2><button id="campusAppsClose" type="button" aria-label="Close computer">×</button></header><div id="campusAppsContent" class="campus-apps-content"></div></div></section>
     <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
   </main>
-
-  <script src="src/state.js"></script>
-  <script src="src/character.js"></script>
-  <script src="src/room.js"></script>
-  <script src="src/explorer.js"></script>
-  <script src="src/ui.js"></script>
-  <script src="app.js"></script>
+  <script src="src/state.js"></script><script src="src/character.js"></script><script src="src/room.js"></script><script src="src/explorer.js"></script><script src="src/ui.js"></script><script src="src/campus-apps.js"></script><script src="app.js"></script>
 </body>
 </html>
