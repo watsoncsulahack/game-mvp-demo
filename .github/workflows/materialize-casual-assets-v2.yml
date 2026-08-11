@@ -1,0 +1,50 @@
+name: Materialize Casual assets v2
+
+on:
+  push:
+    branches:
+      - agent/casual-clothing-assets-20260810
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/casual-clothing-assets-20260810
+          fetch-depth: 0
+
+      - name: Apply tested Casual asset overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          sleep 20
+          git fetch origin agent/casual-clothing-assets-20260810
+          git reset --hard origin/agent/casual-clothing-assets-20260810
+
+          curl -fsSL 'https://filebin.net/openai-campus-buddy-casual-20260810-8f7d9c2e/campus-buddy-casual-overlay-v2.zip' -o /tmp/campus-buddy-casual-overlay.zip
+          unzip -oq /tmp/campus-buddy-casual-overlay.zip -d .
+
+          rm -f agent-casual-upload-probe.txt cleanup-request.txt
+          rm -f assets/buddy/clothing/.upload-status assets/buddy/clothing/.binary-upload-note assets/buddy/clothing/.release-upload-plan
+          rm -f .github/workflows/materialize-casual-assets.yml .github/workflows/materialize-casual-assets-v2.yml
+
+          node --test tests/*.test.mjs
+          node --check app.js
+          node --check src/state.js
+          node --check src/character.js
+          node --check src/room.js
+          node --check src/explorer.js
+          node --check src/ui.js
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Add Casual turnaround clothing assets'
+            git push origin HEAD:agent/casual-clothing-assets-20260810
+          fi
