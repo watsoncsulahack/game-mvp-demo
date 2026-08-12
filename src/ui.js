@@ -21,8 +21,11 @@
     const groups = character.LAYER_ORDER.map(category => `<section class="panel-wardrobe-category"><header><strong>${categories[category]}</strong><span>${character.CLOTHING_CATALOG[category][selected[category]].shortLabel}</span></header><div class="wardrobe-options">${Object.entries(character.CLOTHING_CATALOG[category]).map(([id,item]) => `<button class="wardrobe-option${selected[category]===id?' active':''}" type="button" data-panel-layer-category="${category}" data-layer-category="${category}" data-layer-id="${id}" aria-pressed="${selected[category]===id}"><span class="wardrobe-option-art">${character.renderLayerThumbnail(category,id)}</span><span class="wardrobe-option-copy"><strong>${item.shortLabel}</strong><small>${item.description}</small></span></button>`).join('')}</div></section>`).join('');
     return `<div class="panel-customize-layout">
       <section class="panel-turnaround" aria-label="Buddy turnaround">
-        <div class="panel-turnaround-stage" data-customize-preview>${character.renderCharacter(state.buddy,{angle:0})}</div>
-        <div class="panel-turnaround-controls"><button type="button" data-customize-rotate="-45" aria-label="Rotate Buddy left">‹</button><span data-customize-angle>Front · 1/8</span><button type="button" data-customize-rotate="45" aria-label="Rotate Buddy right">›</button></div>
+        <div class="panel-turnaround-stage" data-customize-turnaround tabindex="0" aria-label="Rotate Buddy turnaround. Drag horizontally or use the arrow buttons.">
+          <div class="panel-turnaround-preview" data-customize-preview>${character.renderCharacter(state.buddy,{angle:0})}</div>
+          <span class="panel-turnaround-hint">↔ Drag to rotate</span>
+          <div class="panel-turnaround-controls" role="group" aria-label="Buddy turnaround controls"><button type="button" data-customize-rotate="-45" aria-label="Rotate Buddy left">‹</button><span data-customize-angle>Front · 1/8</span><button type="button" data-customize-rotate="45" aria-label="Rotate Buddy right">›</button></div>
+        </div>
       </section>
       <div class="panel-wardrobe"><div class="panel-wardrobe-intro"><div><strong>Change ${escapeHtml(state.buddy.name)}'s look</strong><p>Updates apply instantly in Home, dialogue, and the Buddy portrait.</p></div></div>${groups}</div>
     </div>`;
@@ -46,7 +49,7 @@
     return ({
       talk: `<div class="console-tool-card"><h2>Talk</h2><p>Use the microphone button or a quick prompt to check in with ${buddy}.</p><button class="button primary" data-console-sample>Ask about today</button></div>`,
       brief: `<div class="console-tool-card"><h2>Daily Brief</h2><p>You have a study block at 3:30 PM and a team demo at 6:30 PM.</p></div>`,
-      wallet: `<div class="console-tool-card"><h2>Wallet</h2><div class="console-wallet-total">${money(wallet.total)}</div><div class="console-wallet-rows"><span><b>USD</b><strong>${money(wallet.usd)}</strong></span><span><b>BEACH</b><strong>${wallet.beach.toLocaleString('en-US',{maximumFractionDigits:2})}</strong></span></div><p>This is the same balance used by Campus Wallet and Campus Bookstore.</p></div>`,
+      wallet: `<div class="console-tool-card console-wallet-card"><span class="console-tool-kicker">Campus Wallet</span><h2>Wallet</h2><div class="console-wallet-total">${money(wallet.total)}</div><p class="console-wallet-caption">Total demo value</p><div class="console-wallet-rows"><span><b>USD</b><strong>${money(wallet.usd)}</strong></span><span><b>BEACH</b><strong>${wallet.beach.toLocaleString('en-US',{maximumFractionDigits:2})} BEACH</strong></span></div><p>This is the same balance used by Campus Wallet and Campus Bookstore.</p></div>`,
       calc: '<div class="console-tool-card"><h2>Calculator</h2><input id="consoleCalcInput" inputmode="decimal" placeholder="12 * 4"><button class="button primary" data-calculate>Calculate</button><strong id="consoleCalcResult" class="console-result"></strong></div>',
       focus: '<div class="console-tool-card"><h2>Focus</h2><p id="focusReadout" class="console-balance">25:00</p><button class="button primary" data-focus-start>Start 25-minute timer</button></div>'
     })[tool] || '';

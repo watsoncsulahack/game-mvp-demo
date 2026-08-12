@@ -1,6 +1,7 @@
 (() => {
   'use strict';
 
+  const version = '20260812-3';
   const styles = [
     ['campus-currencies', 'styles/campus-currencies.css'],
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
@@ -22,53 +23,29 @@
     if (document.querySelector(`link[data-${name}]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = href;
+    link.href = `${href}?v=${version}`;
     link.setAttribute(`data-${name}`, '');
     document.head.appendChild(link);
   });
 
-  function loadScript({ marker, src, next }) {
-    const existing = document.querySelector(`script[${marker}]`);
-    if (existing) {
-      if (typeof next === 'function') next();
-      return;
-    }
+  function loadScript(marker, src) {
+    if (document.querySelector(`script[${marker}]`)) return;
     const script = document.createElement('script');
-    script.src = src;
+    script.src = `${src}?v=${version}`;
     script.async = false;
     script.setAttribute(marker, '');
-    if (typeof next === 'function') script.addEventListener('load', next, { once:true });
     document.head.appendChild(script);
   }
 
-  function loadRuntime() {
-    loadScript({ marker:'data-campus-email-qr', src:'src/campus-email-qr.js', next:() =>
-      loadScript({ marker:'data-campus-app-runtime', src:'src/campus-app-runtime.js', next:() =>
-        loadScript({ marker:'data-buddy-demo-runtime', src:'src/buddy-demo-runtime.js' })
-      })
-    });
-  }
-
-  function loadAssistant() {
-    loadScript({ marker:'data-campus-bookstore-assistant', src:'src/campus-bookstore-assistant.js' });
-  }
-
-  function loadBookstoreCheckout() {
-    loadScript({ marker:'data-campus-bookstore-wallet-checkout', src:'src/campus-bookstore-wallet-checkout.js', next:loadAssistant });
-  }
-
-  function loadBookstoreParity() {
-    loadScript({ marker:'data-campus-bookstore-parity', src:'src/campus-bookstore-parity.js', next:loadBookstoreCheckout });
-  }
-
-  function loadBookstoreSelection() {
-    loadScript({ marker:'data-campus-bookstore-selection', src:'src/campus-bookstore-selection.js', next:loadBookstoreParity });
-  }
-
-  function loadBookstore() {
-    loadScript({ marker:'data-campus-bookstore-v1', src:'src/campus-bookstore-integration.js', next:loadBookstoreSelection });
-  }
-
-  loadBookstore();
-  loadScript({ marker:'data-campus-faucet-v4', src:'src/campus-faucet-integration-v4.js', next:loadRuntime });
+  // Keep every integration independently loadable. A failure in one optional
+  // app module must never prevent the shared Wallet/Buddy runtimes from loading.
+  loadScript('data-campus-email-qr', 'src/campus-email-qr.js');
+  loadScript('data-campus-bookstore-v1', 'src/campus-bookstore-integration.js');
+  loadScript('data-campus-bookstore-selection', 'src/campus-bookstore-selection.js');
+  loadScript('data-campus-bookstore-parity', 'src/campus-bookstore-parity.js');
+  loadScript('data-campus-bookstore-wallet-checkout', 'src/campus-bookstore-wallet-checkout.js');
+  loadScript('data-campus-bookstore-assistant', 'src/campus-bookstore-assistant.js');
+  loadScript('data-campus-faucet-v4', 'src/campus-faucet-integration-v4.js');
+  loadScript('data-campus-app-runtime', 'src/campus-app-runtime.js');
+  loadScript('data-buddy-demo-runtime', 'src/buddy-demo-runtime.js');
 })();

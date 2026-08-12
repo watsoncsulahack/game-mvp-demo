@@ -37,7 +37,7 @@
     stepper.dataset.cbParityId = id;
     stepper.dataset.cbParityContext = context;
     stepper.classList.add('cb-parity-arrow-stepper');
-    stepper.innerHTML = `<button class="cb-parity-step cb-parity-step-down" type="button" data-cb-qty="-1" data-cb-product-id="${id}" data-cb-context="${context}" aria-label="Decrease quantity"><svg viewBox="0 0 56 44" aria-hidden="true"><path class="cb-parity-arrow" d="M19 5 4 22l15 17"/><path class="cb-parity-symbol" d="M30 22h12"/></svg></button><output>${output.textContent}</output><button class="cb-parity-step cb-parity-step-up" type="button" data-cb-qty="1" data-cb-product-id="${id}" data-cb-context="${context}" aria-label="Increase quantity"><svg viewBox="0 0 56 44" aria-hidden="true"><path class="cb-parity-arrow" d="m37 5 15 17-15 17"/><path class="cb-parity-symbol" d="M14 22h12"/><path class="cb-parity-symbol cb-parity-plus-vertical" d="M20 16v12"/></svg></button>`;
+    stepper.innerHTML = `<button class="cb-parity-step cb-parity-step-down" type="button" data-cb-qty="-1" data-cb-product-id="${id}" data-cb-context="${context}" aria-label="Decrease quantity"><svg viewBox="0 0 36 44" aria-hidden="true"><path class="cb-parity-arrow" d="M15 10 8 22l7 12"/><path class="cb-parity-symbol" d="M19 22h9"/></svg></button><output>${output.textContent}</output><button class="cb-parity-step cb-parity-step-up" type="button" data-cb-qty="1" data-cb-product-id="${id}" data-cb-context="${context}" aria-label="Increase quantity"><svg viewBox="0 0 36 44" aria-hidden="true"><path class="cb-parity-arrow" d="m21 10 7 12-7 12"/><path class="cb-parity-symbol" d="M8 22h9"/><path class="cb-parity-symbol cb-parity-plus-vertical" d="M12.5 17v10"/></svg></button>`;
   }
 
   function decorateSteppers(scope) {
@@ -54,7 +54,7 @@
     void stepper.offsetWidth;
     stepper.classList.add(delta > 0 ? 'is-increasing' : 'is-decreasing');
     clearTimeout(stepper._parityTimer);
-    stepper._parityTimer = setTimeout(() => stepper.classList.remove('is-increasing','is-decreasing'), 500);
+    stepper._parityTimer = setTimeout(() => stepper.classList.remove('is-increasing','is-decreasing'), 180);
   }
 
   function ensureStockChip(scope) {
