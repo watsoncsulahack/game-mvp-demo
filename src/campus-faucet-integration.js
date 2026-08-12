@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const version = '20260812-4';
+  const version = '20260812-5';
   const styles = [
     ['campus-currencies', 'styles/campus-currencies.css'],
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
@@ -14,9 +14,9 @@
     ['campus-bookstore-selection', 'styles/campus-bookstore-selection.css'],
     ['campus-bookstore-parity', 'styles/campus-bookstore-parity.css'],
     ['campus-bookstore-wallet-checkout', 'styles/campus-bookstore-wallet-checkout.css'],
-    ['campus-bookstore-assistant', 'styles/campus-bookstore-assistant.css'],
     ['campus-app-runtime', 'styles/campus-app-runtime.css'],
-    ['buddy-demo-runtime', 'styles/buddy-demo-runtime.css']
+    ['buddy-demo-runtime', 'styles/buddy-demo-runtime.css'],
+    ['demo-refinement', 'styles/demo-refinement.css']
   ];
 
   styles.forEach(([name, href]) => {
@@ -42,8 +42,8 @@
   loadScript('data-campus-bookstore-selection', 'src/campus-bookstore-selection.js');
   loadScript('data-campus-bookstore-parity', 'src/campus-bookstore-parity.js');
   loadScript('data-campus-bookstore-wallet-checkout', 'src/campus-bookstore-wallet-checkout.js');
-  loadScript('data-campus-bookstore-assistant', 'src/campus-bookstore-assistant.js');
   loadScript('data-campus-faucet-v4', 'src/campus-faucet-integration-v4.js');
   loadScript('data-campus-app-runtime', 'src/campus-app-runtime.js');
   loadScript('data-buddy-demo-runtime', 'src/buddy-demo-runtime.js');
+  loadScript('data-demo-refinement', 'src/demo-refinement.js');
 })();
