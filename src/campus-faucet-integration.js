@@ -14,7 +14,8 @@
     ['campus-bookstore-selection', 'styles/campus-bookstore-selection.css'],
     ['campus-bookstore-parity', 'styles/campus-bookstore-parity.css'],
     ['campus-bookstore-wallet-checkout', 'styles/campus-bookstore-wallet-checkout.css'],
-    ['campus-ui-polish', 'styles/campus-ui-polish.css']
+    ['campus-ui-polish', 'styles/campus-ui-polish.css'],
+    ['campus-ui-polish-v2', 'styles/campus-ui-polish-v2.css']
   ];
 
   styles.forEach(([name, href]) => {
@@ -26,12 +27,25 @@
     document.head.appendChild(link);
   });
 
+  function loadUiPolishV2() {
+    if (document.querySelector('script[data-campus-ui-polish-v2]')) return;
+    const script = document.createElement('script');
+    script.src = 'src/campus-ui-polish-v2.js';
+    script.async = false;
+    script.dataset.campusUiPolishV2 = '';
+    document.head.appendChild(script);
+  }
+
   function loadUiPolish() {
-    if (document.querySelector('script[data-campus-ui-polish]')) return;
+    if (document.querySelector('script[data-campus-ui-polish]')) {
+      loadUiPolishV2();
+      return;
+    }
     const script = document.createElement('script');
     script.src = 'src/campus-ui-polish.js';
     script.async = false;
     script.dataset.campusUiPolish = '';
+    script.addEventListener('load', loadUiPolishV2, { once:true });
     document.head.appendChild(script);
   }
 
