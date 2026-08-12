@@ -6,10 +6,7 @@
   let previewPointer = null;
   let customizePointer = null;
   let customizeAngle = 0;
-
-  const esc = value => String(value).replace(/[&<>"']/g, char => ({
-    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
-  })[char]);
+  let explorerRenderer = null;
 
   function state() { return window.CampusBuddyState || null; }
   function setText(element, value) {
@@ -31,21 +28,28 @@
   }
 
   function colorControl(key, label, current, saturation, lightness) {
-    return `<label class="demo-color-control" data-demo-color-wrap="${key}"><span>${label}</span><div><input type="range" min="0" max="359" step="1" value="${hexToHue(current)}" data-demo-color="${key}" data-sat="${saturation}" data-light="${lightness}" aria-label="${label}"><output>${esc(current)}</output></div></label>`;
+    return `<label class="demo-color-control" data-demo-color-wrap="${key}"><span>${label}</span><input type="range" min="0" max="359" step="1" value="${hexToHue(current)}" data-demo-color="${key}" data-sat="${saturation}" data-light="${lightness}" aria-label="${label}"></label>`;
   }
 
-  function appearanceMarkup(value) {
+  function cosmeticsMarkup(value, extraClass='') {
     const appearance = value.buddy.appearance;
-    return `<fieldset class="demo-cosmetics-fieldset"><legend>Appearance</legend><div class="demo-cosmetics-grid"><div class="demo-hair-choice"><span>Hair style</span><div class="chip-row"><button type="button" data-demo-hair="none">None</button><button type="button" data-demo-hair="swept">Swept</button><button type="button" data-demo-hair="bob">Bob</button><button type="button" data-demo-hair="cloud">Cloud</button></div></div>${colorControl('eyeColor','Eye color',appearance.eyeColor,58,19)}${colorControl('bodyColor','Body color',appearance.bodyColor,30,96)}${colorControl('hairColor','Hair color',appearance.hairColor,40,25)}</div></fieldset>`;
+    return `<fieldset class="demo-cosmetics-fieldset ${extraClass}"><legend>Appearance</legend><div class="demo-cosmetics-grid"><div class="demo-hair-choice"><span>Hair style</span><div class="chip-row"><button type="button" data-demo-hair="none">None</button><button type="button" data-demo-hair="swept">Swept</button><button type="button" data-demo-hair="bob">Bob</button><button type="button" data-demo-hair="cloud">Cloud</button></div></div>${colorControl('eyeColor','Eye color',appearance.eyeColor,58,19)}${colorControl('bodyColor','Body color',appearance.bodyColor,30,96)}${colorControl('hairColor','Hair color',appearance.hairColor,40,25)}</div></fieldset>`;
   }
 
   function setupAppearanceControls() {
     const value = state();
+    if (!value) return;
+
     const fields = $('.design-fields');
-    if (!value || !fields) return;
-    if (!fields.querySelector('.demo-cosmetics-fieldset')) {
+    if (fields && !fields.querySelector('.demo-cosmetics-fieldset')) {
       const wardrobe = fields.querySelector('.wardrobe-fieldset');
-      wardrobe?.insertAdjacentHTML('beforebegin', appearanceMarkup(value));
+      wardrobe?.insertAdjacentHTML('beforebegin', cosmeticsMarkup(value));
+    }
+
+    const customize = $('.panel-customize-layout');
+    if (customize && !customize.querySelector('.demo-customize-cosmetics')) {
+      const turnaround = customize.querySelector('.panel-turnaround');
+      turnaround?.insertAdjacentHTML('afterend', cosmeticsMarkup(value, 'demo-customize-cosmetics'));
     }
     syncAppearanceControls();
   }
@@ -57,12 +61,12 @@
     document.querySelectorAll('[data-demo-hair]').forEach(button => {
       button.classList.toggle('active', button.dataset.demoHair === appearance.hairStyle);
     });
-    const hair = $('[data-demo-color="hairColor"]');
-    const wrap = $('[data-demo-color-wrap="hairColor"]');
-    if (hair) {
-      hair.disabled = appearance.hairStyle === 'none';
-      wrap?.classList.toggle('is-disabled', hair.disabled);
-    }
+    document.querySelectorAll('[data-demo-color-wrap="hairColor"]').forEach(wrap => {
+      const input = wrap.querySelector('[data-demo-color="hairColor"]');
+      if (!input) return;
+      input.disabled = appearance.hairStyle === 'none';
+      wrap.classList.toggle('is-disabled', input.disabled);
+    });
   }
 
   function appearanceSignature(value, angle) {
@@ -74,6 +78,22 @@
     if (!element || element.dataset.demoRenderSignature === signature) return;
     element.dataset.demoRenderSignature = signature;
     element.innerHTML = markup;
+  }
+
+  function ensureExplorerRenderer() {
+    const value = state();
+    const Explorer = window.CampusBuddyExplorer;
+    if (explorerRenderer || !value || !Explorer) return explorerRenderer;
+    const canvas = $('#worldCanvas'), miniMap = $('#miniMap'), prompt = $('#worldPrompt'), promptText = $('#worldPromptText');
+    if (!canvas || !miniMap || !prompt || !promptText) return null;
+    explorerRenderer = Explorer.createExplorer({ state:value, canvas, miniMap, prompt, promptText });
+    return explorerRenderer;
+  }
+
+  function redrawExplorer() {
+    const value = state();
+    if (value?.view !== 'explorer') return;
+    ensureExplorerRenderer()?.draw();
   }
 
   function syncCustomizePreview(force=false) {
@@ -102,18 +122,23 @@
       ['#quickBust', Character.renderCharacter(value.buddy,{crop:'bust'}), `${signature}|quick`]
     ];
     targets.forEach(([selector, markup, key]) => renderInto($(selector), markup, key));
+
     const consoleBuddy = $('#consoleBuddy');
-    if (consoleBuddy) renderInto(consoleBuddy, Character.renderCharacter(value.buddy), `${signature}|console-full`);
+    if (consoleBuddy) renderInto(consoleBuddy, Character.renderCharacter(value.buddy,{crop:'bust'}), `${signature}|console-bust`);
+
     const roomBuddy = $('#roomBuddyArt');
     if (roomBuddy) {
       const pose = window.CampusBuddyRoom?.activityModel(value.activity)?.buddy?.pose || 'standing';
       renderInto(roomBuddy, Character.renderCharacter(value.buddy,{pose}), `${signature}|room|${pose}`);
     }
+
     const view = Character.viewForAngle(angle);
     setText($('#rotationStatus'), `${view.label} · ${view.index+1}/8`);
+    setupAppearanceControls();
     syncAppearanceControls();
     syncCustomizePreview(true);
     syncHomePosition();
+    redrawExplorer();
   }
 
   function syncHomePosition() {
@@ -160,9 +185,7 @@
       mic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg>';
       mic.setAttribute('aria-label','Microphone');
     }
-    if (value && Character) {
-      renderInto($('#consoleBuddy'), Character.renderCharacter(value.buddy), `${appearanceSignature(value,0)}|console-full`);
-    }
+    if (value && Character) renderInto($('#consoleBuddy'), Character.renderCharacter(value.buddy,{crop:'bust'}), `${appearanceSignature(value,0)}|console-bust`);
     const actions = $('#consoleActions');
     if (actions) actions.hidden = false;
   }
@@ -194,7 +217,9 @@
     if (!value) return;
     const key = color.dataset.demoColor;
     value.buddy.appearance[key] = window.CampusBuddyCore.hslToHex(Number(color.value), Number(color.dataset.sat), Number(color.dataset.light));
-    setText(color.parentElement.querySelector('output'), value.buddy.appearance[key]);
+    document.querySelectorAll(`[data-demo-color="${key}"]`).forEach(input => {
+      if (input !== color) input.value = color.value;
+    });
     refreshBuddyVisuals();
   }, true);
 
@@ -214,6 +239,14 @@
       customizeAngle = window.CampusBuddyCore.normalizeAngle(customizeAngle + Number(rotate.dataset.customizeRotate));
       syncCustomizePreview(true);
       return;
+    }
+
+    if (event.target.closest?.('[data-panel-layer-category]')) {
+      requestAnimationFrame(() => {
+        setupAppearanceControls();
+        refreshBuddyVisuals();
+        redrawExplorer();
+      });
     }
 
     if (event.target.closest?.('#roomScene [aria-label="desk"]')) {
@@ -237,7 +270,7 @@
       }
     }
 
-    if (event.target.closest?.('#roomViewButton')) requestAnimationFrame(syncHomePosition);
+    if (event.target.closest?.('#roomViewButton')) queueMicrotask(syncHomePosition);
     if (event.target.closest?.('#consoleButton')) requestAnimationFrame(syncConsole);
   }, true);
 
@@ -252,7 +285,8 @@
     if (customize && !event.target.closest('button')) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      customizePointer = { id:event.pointerId, startX:event.clientX, startAngle:customizeAngle, moved:false };
+      const rect = customize.getBoundingClientRect();
+      customizePointer = { id:event.pointerId, startX:event.clientX, startAngle:customizeAngle, moved:false, left:rect.left, width:rect.width };
       customize.setPointerCapture?.(event.pointerId);
       return;
     }
@@ -298,9 +332,8 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       if (!customizePointer.moved) {
-        const target = $('[data-customize-turnaround]');
-        const rect = target?.getBoundingClientRect();
-        if (rect) customizeAngle = window.CampusBuddyCore.normalizeAngle(customizeAngle + (event.clientX < rect.left + rect.width/2 ? -45 : 45));
+        const midpoint = customizePointer.left + customizePointer.width/2;
+        customizeAngle = window.CampusBuddyCore.normalizeAngle(customizeAngle + (event.clientX < midpoint ? -45 : 45));
         syncCustomizePreview(true);
       }
       customizePointer = null;

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const version = '20260812-3';
+  const version = '20260812-4';
   const styles = [
     ['campus-currencies', 'styles/campus-currencies.css'],
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
@@ -37,8 +37,6 @@
     document.head.appendChild(script);
   }
 
-  // Keep every integration independently loadable. A failure in one optional
-  // app module must never prevent the shared Wallet/Buddy runtimes from loading.
   loadScript('data-campus-email-qr', 'src/campus-email-qr.js');
   loadScript('data-campus-bookstore-v1', 'src/campus-bookstore-integration.js');
   loadScript('data-campus-bookstore-selection', 'src/campus-bookstore-selection.js');

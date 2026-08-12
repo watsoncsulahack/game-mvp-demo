@@ -24,6 +24,10 @@ button:not(:disabled) { cursor:pointer; }
 [hidden] { display:none !important; }
 .app { min-height:var(--app-visual-viewport-height); }
 
+/* This legacy bubble is intentionally retired. Keeping the rule in the base
+   stylesheet prevents it from flashing before the deferred integration CSS loads. */
+.look-status { display:none !important; }
+
 .button {
   min-height:38px;
   padding:7px 13px;
