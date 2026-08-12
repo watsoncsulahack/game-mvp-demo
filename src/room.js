@@ -42,18 +42,13 @@
     return state.time === 'night' ? '#172A59' : state.time === 'sunset' ? '#EF8D73' : theme.sky;
   }
 
-  function roomSceneSvg(state, { includeBuddy = true, includeStatus = true } = {}) {
+  function roomSceneSvg(state, { includeStatus = true } = {}) {
     const theme = ROOM_THEMES[state.room];
-    const activity = activityModel(state.activity);
-    const buddy = activity.buddy;
     const night = state.time === 'night';
     const sunset = state.time === 'sunset';
     const overlay = night
       ? '<rect width="1200" height="650" fill="#132550" opacity=".35"/>'
       : sunset ? '<rect width="1200" height="650" fill="#E66D58" opacity=".12"/>' : '';
-    const buddySvg = includeBuddy
-      ? `<g transform="translate(${buddy.x} ${buddy.y}) scale(${buddy.scale})">${window.CampusBuddyCharacter.renderCharacter(state.buddy, { pose:buddy.pose }).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</g>`
-      : '';
     return `<svg viewBox="0 0 1200 650" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(theme.label)} Home">
       <rect width="1200" height="650" fill="${theme.wall}"/>
       <rect y="420" width="1200" height="230" fill="${theme.floor}"/>
@@ -63,7 +58,6 @@
       <g aria-label="desk"><rect x="468" y="327" width="343" height="34" fill="#86522D" stroke="#14244A" stroke-width="7"/><rect x="493" y="359" width="25" height="145" fill="#86522D"/><rect x="760" y="359" width="25" height="145" fill="#86522D"/><rect x="566" y="215" width="144" height="108" rx="5" fill="#1C315D" stroke="#14244A" stroke-width="8"/><rect x="579" y="228" width="118" height="78" fill="#4E9DE7"/></g>
       <g aria-label="bookshelf"><rect x="885" y="140" width="245" height="365" fill="#765032" stroke="#14244A" stroke-width="9"/><path d="M892 220H1122M892 310H1122M892 400H1122" stroke="#14244A" stroke-width="7"/><g fill="${theme.accent}"><rect x="915" y="165" width="30" height="48"/><rect x="954" y="158" width="25" height="55"/><rect x="990" y="170" width="36" height="43"/></g></g>
       <path aria-label="rug" d="M370 465L826 465L905 630H288Z" fill="${theme.rug}" stroke="#14244A" stroke-width="8"/><path d="M392 487H804L855 602H336Z" fill="none" stroke="${theme.accent}" stroke-width="5" opacity=".7"/>
-      ${buddySvg}
       ${includeStatus ? `<g transform="translate(18 18)"><rect width="280" height="52" rx="14" fill="rgba(16,26,51,.86)"/><text x="18" y="22" fill="#6BE6D0" font-family="monospace" font-size="13" font-weight="900">HOME</text><text x="18" y="41" fill="#FFF" font-family="Arial, sans-serif" font-size="14">${escapeHtml(activityLabel(state.activity))}</text></g>` : ''}
       ${overlay}
     </svg>`;

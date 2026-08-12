@@ -4,15 +4,7 @@
   const { normalizeAngle, escapeHtml } = window.CampusBuddyCore;
   const ASSET_ROOT = 'assets/buddy/turnaround';
   const VIEWS_ROOT = `${ASSET_ROOT}/views`;
-  const OUTFITS_ROOT = `${ASSET_ROOT}/outfits`;
-  const CASUAL_OUTFIT_ROOT = `${OUTFITS_ROOT}/casual`;
-  const ATLAS = `${ASSET_ROOT}/layers-atlas.png`;
-  const CELL_WIDTH = 256;
-  const CELL_HEIGHT = 640;
-  const SHEET_WIDTH = CELL_WIDTH * 8;
-  const ATLAS_HEIGHT = CELL_HEIGHT * 15;
-  const SOURCE_BODY_COLOR = '#F7FBFC';
-  const SOURCE_EYE_COLOR = '#171923';
+  const FRAME = Object.freeze({ width:256, height:640, anchor:Object.freeze({ x:128, y:640, name:'bottom-center' }) });
 
   const TURNAROUND_VIEWS = Object.freeze([
     { angle:0, index:0, slug:'front', label:'Front', file:`${VIEWS_ROOT}/front.png` },
@@ -25,136 +17,114 @@
     { angle:315, index:7, slug:'right-quarter-front', label:'Right quarter front', file:`${VIEWS_ROOT}/right-quarter-front.png` }
   ]);
 
-  const LAYER_ROWS = Object.freeze({
-    body:0,
-    line:1,
-    eyes:2,
-    'hair-swept':3,
-    'hair-swept-line':4,
-    'hair-bob':5,
-    'hair-bob-line':6,
-    'hair-cloud':7,
-    'hair-cloud-line':8,
-    'outfit-tee':9,
-    'outfit-tee-line':10,
-    'outfit-hoodie':11,
-    'outfit-hoodie-line':12,
-    'outfit-jacket':13,
-    'outfit-jacket-line':14
+  const CLOTHING_CATALOG = Object.freeze({
+    top:Object.freeze({
+      none:Object.freeze({ label:'No top', shortLabel:'None', description:'Base Buddy layer only.', root:null }),
+      'tee-classic':Object.freeze({ label:'Classic campus tee', shortLabel:'Classic tee', description:'Soft cream tee with navy trim.', root:`${ASSET_ROOT}/clothing/tops/shirts/tee-classic` })
+    }),
+    bottom:Object.freeze({
+      none:Object.freeze({ label:'No bottoms', shortLabel:'None', description:'Base Buddy layer only.', root:null }),
+      'jeans-wide-leg':Object.freeze({ label:'Wide-leg jeans', shortLabel:'Wide-leg jeans', description:'Relaxed denim with stitched pockets.', root:`${ASSET_ROOT}/clothing/bottoms/jeans-wide-leg` })
+    }),
+    footwear:Object.freeze({
+      none:Object.freeze({ label:'No shoes', shortLabel:'None', description:'Base Buddy layer only.', root:null }),
+      'sneakers-low-top':Object.freeze({ label:'Low-top sneakers', shortLabel:'Low-top sneakers', description:'Everyday cream campus sneakers.', root:`${ASSET_ROOT}/clothing/footwear/shoes/sneakers-low-top` })
+    })
   });
 
-  const OUTFIT_COLORS = Object.freeze({ tee:'#5D7FE6', hoodie:'#5FB594', jacket:'#EF9B7F' });
-  const CASUAL_VIEWS = Object.freeze({
-    front:{file:'front.webp',mirror:false},
-    'left-quarter-front':{file:'left-quarter-front.webp',mirror:false},
-    'left-side':{file:'left-side.webp',mirror:false},
-    'left-quarter-rear':{file:'left-quarter-rear.webp',mirror:false},
-    rear:{file:'rear.webp',mirror:false},
-    'right-quarter-rear':{file:'left-quarter-rear.webp',mirror:true},
-    'right-side':{file:'left-side.webp',mirror:true},
-    'right-quarter-front':{file:'left-quarter-front.webp',mirror:true}
-  });
-  let renderSerial = 0;
+  const LAYER_ORDER = Object.freeze(['top','bottom','footwear']);
 
   function viewForAngle(angle) {
     const normalized = normalizeAngle(angle);
     return TURNAROUND_VIEWS.find(view => view.angle === normalized) || TURNAROUND_VIEWS[0];
   }
 
-  function atlasMask(id, row, viewIndex) {
-    const x = -viewIndex * CELL_WIDTH;
-    const y = -row * CELL_HEIGHT;
-    return `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${CELL_WIDTH}" height="${CELL_HEIGHT}" style="mask-type:luminance"><image href="${ATLAS}" x="${x}" y="${y}" width="${SHEET_WIDTH}" height="${ATLAS_HEIGHT}"/></mask>`;
+  function assetUrl(file) {
+    if (typeof document === 'undefined' || !document.baseURI || typeof URL === 'undefined') return file;
+    try { return new URL(file,document.baseURI).href; } catch { return file; }
   }
 
-  function maskedFill(id, color) {
-    return `<rect width="${CELL_WIDTH}" height="${CELL_HEIGHT}" fill="${color}" mask="url(#${id})"/>`;
+  function selectedLayer(appearance, category) {
+    const catalog = CLOTHING_CATALOG[category];
+    const selected = appearance?.[category];
+    return catalog[selected] ? selected : 'none';
   }
 
-  function casualImage(view) {
-    const asset = CASUAL_VIEWS[view.slug] || CASUAL_VIEWS.front;
-    const image = `<image href="${CASUAL_OUTFIT_ROOT}/${asset.file}" x="0" y="0" width="256" height="640" preserveAspectRatio="none" data-casual-outfit="true"/>`;
-    return asset.mirror ? `<g transform="translate(256 0) scale(-1 1)" data-casual-mirror="true">${image}</g>` : image;
+  function layerFile(category, id, viewOrAngle = 0) {
+    const item = CLOTHING_CATALOG[category]?.[id];
+    if (!item?.root) return null;
+    const view = typeof viewOrAngle === 'object' ? viewOrAngle : viewForAngle(viewOrAngle);
+    return `${item.root}/${view.slug}.png`;
+  }
+
+  function equippedLayers(appearance) {
+    return Object.fromEntries(LAYER_ORDER.map(category => [category,selectedLayer(appearance,category)]));
+  }
+
+  function layerImage(file, category, id, extraClass = '') {
+    const source = assetUrl(file);
+    return `<img class="buddy-sprite-layer buddy-sprite-layer--${category}${extraClass ? ` ${extraClass}` : ''}" src="${source}" data-source-path="${file}" data-character-layer="${category}" data-layer-id="${id}" width="${FRAME.width}" height="${FRAME.height}" alt="" aria-hidden="true" loading="eager" decoding="sync" draggable="false">`;
   }
 
   function renderCharacter(buddy, { angle=0, crop='full', pose='standing' } = {}) {
     const view = viewForAngle(angle);
-    const appearance = buddy.appearance;
-    const isCasual = appearance.outfit === 'tee';
-    const prefix = `buddy-${++renderSerial}-${view.index}-${crop}-${appearance.hairStyle}-${appearance.outfit}`;
-    const customBody = appearance.bodyColor.toUpperCase() !== SOURCE_BODY_COLOR;
-    const customEyes = appearance.eyeColor.toUpperCase() !== SOURCE_EYE_COLOR;
-    const hasHair = appearance.hairStyle !== 'none';
-    const hasOutfit = appearance.outfit !== 'none';
-    const bodyId = `${prefix}-body`;
-    const eyesId = `${prefix}-eyes`;
-    const hairId = `${prefix}-hair`;
-    const hairLineId = `${prefix}-hair-line`;
-    const outfitId = `${prefix}-outfit`;
-    const outfitLineId = `${prefix}-outfit-line`;
-    const viewBox = crop === 'bust' ? '0 0 256 250' : crop === 'waist' ? '0 0 256 405' : '0 0 256 640';
-    const defs = [];
-    const overlays = [];
+    const appearance = buddy.appearance || {};
+    const selected = equippedLayers(appearance);
+    const cropName = ['full','waist','bust'].includes(crop) ? crop : 'full';
+    const garmentNames = LAYER_ORDER
+      .map(category => CLOTHING_CATALOG[category][selected[category]])
+      .filter(item => item.root)
+      .map(item => item.shortLabel.toLowerCase());
+    const label = `${buddy.name} ${view.label.toLowerCase()} view${garmentNames.length ? ` wearing ${garmentNames.join(', ')}` : ''}`;
+    const layers = [layerImage(view.file,'body','base','buddy-sprite-layer--body')];
 
-    // Casual is already composited as a complete dressed Buddy. The old body
-    // and clothing masks must not be painted over it or registration breaks.
-    if (customBody && !isCasual) {
-      defs.push(atlasMask(bodyId,LAYER_ROWS.body,view.index));
-      overlays.push(maskedFill(bodyId,appearance.bodyColor));
-    }
-    if (hasOutfit && !isCasual) {
-      defs.push(atlasMask(outfitId,LAYER_ROWS[`outfit-${appearance.outfit}`],view.index));
-      defs.push(atlasMask(outfitLineId,LAYER_ROWS[`outfit-${appearance.outfit}-line`],view.index));
-      overlays.push(maskedFill(outfitId,OUTFIT_COLORS[appearance.outfit] || OUTFIT_COLORS.tee));
-      overlays.push(maskedFill(outfitLineId,'#111318'));
-    }
-    if (hasHair) {
-      defs.push(atlasMask(hairId,LAYER_ROWS[`hair-${appearance.hairStyle}`],view.index));
-      defs.push(atlasMask(hairLineId,LAYER_ROWS[`hair-${appearance.hairStyle}-line`],view.index));
-      overlays.push(maskedFill(hairId,appearance.hairColor));
-      overlays.push(maskedFill(hairLineId,'#111318'));
-    }
-    if (customEyes) {
-      defs.push(atlasMask(eyesId,LAYER_ROWS.eyes,view.index));
-      overlays.push(maskedFill(eyesId,appearance.eyeColor));
+    for (const category of LAYER_ORDER) {
+      const id = selected[category];
+      const file = layerFile(category,id,view);
+      if (file) layers.push(layerImage(file,category,id));
     }
 
-    return `<svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(buddy.name)} ${view.label.toLowerCase()} view" data-turnaround-view="${view.slug}" data-buddy-angle="${view.angle}" data-pose="${pose}"${isCasual ? ' data-precomposited-outfit="casual"' : ''}>
-      ${defs.length ? `<defs>${defs.join('')}</defs>` : ''}
-      ${isCasual ? casualImage(view) : `<image href="${view.file}" x="0" y="0" width="256" height="640" preserveAspectRatio="xMidYMid meet" data-authored-turnaround="true"/>`}
-      ${overlays.join('')}
-    </svg>`;
+    return `<span class="buddy-sprite buddy-sprite--${cropName}" role="img" aria-label="${escapeHtml(label)}" data-turnaround-view="${view.slug}" data-buddy-angle="${view.angle}" data-pose="${escapeHtml(pose)}" data-anchor="${FRAME.anchor.name}" data-anchor-x="${FRAME.anchor.x}" data-anchor-y="${FRAME.anchor.y}"><span class="buddy-sprite-frame">${layers.join('')}</span></span>`;
   }
 
   function renderConsoleHead(buddy) {
-    return renderCharacter(buddy,{crop:'bust'}).replace('<svg ','<svg data-console-head="true" ');
+    return renderCharacter(buddy,{crop:'bust'}).replace('class="buddy-sprite ','class="buddy-sprite buddy-sprite--console ');
   }
 
-  function relabelCasualChoice() {
-    if (typeof document === 'undefined') return;
-    const casualButton = document.querySelector('[data-outfit="tee"]');
-    if (casualButton) casualButton.textContent = 'Casual';
+  function renderLayerThumbnail(category, id) {
+    const item = CLOTHING_CATALOG[category]?.[id];
+    if (!item?.root) return '<span class="wardrobe-empty-art" aria-hidden="true">None</span>';
+    const file = layerFile(category,id,TURNAROUND_VIEWS[0]);
+    return `<img src="${assetUrl(file)}" data-source-path="${file}" width="${FRAME.width}" height="${FRAME.height}" alt="" aria-hidden="true" loading="eager" decoding="sync" draggable="false">`;
   }
 
-  if (typeof document !== 'undefined') setTimeout(relabelCasualChoice,0);
+  function whenImagesReady(root = document) {
+    const images = [...root.querySelectorAll('.buddy-sprite img,.wardrobe-option img')];
+    return Promise.all(images.map(image => {
+      if (image.complete && image.naturalWidth) return Promise.resolve();
+      if (typeof image.decode === 'function') return image.decode().catch(()=>{});
+      return new Promise(resolve => {
+        image.addEventListener('load',resolve,{once:true});
+        image.addEventListener('error',resolve,{once:true});
+      });
+    }));
+  }
 
   window.CampusBuddyCharacter = Object.freeze({
     ASSET_ROOT,
     VIEWS_ROOT,
-    OUTFITS_ROOT,
-    CASUAL_OUTFIT_ROOT,
-    ATLAS,
-    CELL_WIDTH,
-    CELL_HEIGHT,
-    SOURCE_BODY_COLOR,
-    SOURCE_EYE_COLOR,
+    FRAME,
     TURNAROUND_VIEWS,
-    LAYER_ROWS,
-    OUTFIT_COLORS,
-    CASUAL_VIEWS,
+    CLOTHING_CATALOG,
+    LAYER_ORDER,
     viewForAngle,
-    casualImage,
+    assetUrl,
+    selectedLayer,
+    layerFile,
+    equippedLayers,
     renderCharacter,
-    renderConsoleHead
+    renderConsoleHead,
+    renderLayerThumbnail,
+    whenImagesReady
   });
 })();

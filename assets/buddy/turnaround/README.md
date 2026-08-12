@@ -1,5 +1,20 @@
 # Buddy turnaround assets
 
-The original eight-view turnaround sheet is `layers-atlas.png`.
+The runtime uses ordinary transparent PNG layers. It does not use a texture
+atlas or SVG masks.
 
-`views/` contains eight separate PNG files extracted once from the turnaround sheet: `front.png`, `left-quarter-front.png`, `left-side.png`, `left-quarter-rear.png`, `rear.png`, `right-quarter-rear.png`, `right-side.png`, and `right-quarter-front.png`. `src/character.js` selects one of these images directly for the 360-degree view.
+## Frame contract
+
+- Logical frame: `256 × 640`
+- Anchor: bottom center (`128, 640`)
+- Views: front, both quarter-fronts, both sides, both quarter-rears, and rear
+- Layer order: body, top, bottom, footwear
+
+`views/` contains the eight base Buddy renders. Each selectable item under
+`clothing/` contains the same eight filenames. Source artwork may be exported
+at a multiple of `256 × 640` (the jeans are currently 4×), but it must preserve
+the same transparent frame, scale, and bottom-center anchor.
+
+`layers-atlas.png` and `outfits/casual/` are legacy prototype artifacts. They
+remain in the repository for comparison but are no longer referenced at
+runtime. New items should be added as aligned PNG sets under `clothing/`.

@@ -1,31 +1,4 @@
-/* Second-pass UI polish: push drawers, restored receive card, onboarding density, and Bookstore source parity. */
-
-/* Design Buddy: keep controls horizontal and avoid stretched cards at the split-screen width used for the demo. */
-@media (min-width:761px) {
-  .design-fields {
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    align-items:start!important;
-    align-content:start!important;
-    gap:10px 12px!important;
-  }
-  .design-fields > label:first-child,
-  .design-fields > .form-error { grid-column:1 / -1!important; }
-  .design-fields fieldset { align-self:start!important; height:auto!important; min-height:0!important; }
-  .design-fields fieldset:nth-of-type(1) { grid-column:1 / -1!important; }
-  .design-fields fieldset:nth-of-type(2) { grid-column:1!important; }
-  .design-fields fieldset:nth-of-type(3) { grid-column:2!important; }
-  .design-fields fieldset:nth-of-type(4) { grid-column:1!important; }
-  #hairColorField { grid-column:2!important; }
-  .design-fields fieldset:nth-of-type(6) { grid-column:1 / -1!important; }
-  #dispositionChoices,#outfitChoices { flex-wrap:nowrap!important; }
-  .hue-control { grid-template-columns:minmax(150px,1fr) 68px!important; gap:10px!important; }
-  .hue-control input[type="range"] { width:100%!important; min-width:150px!important; }
-  .hue-control output { min-width:64px!important; text-align:right!important; }
-}
-@media (min-width:1100px) {
-  .hue-control { grid-template-columns:minmax(190px,1fr) 72px!important; }
-  .hue-control input[type="range"] { min-width:190px!important; }
-}
+/* Second-pass UI polish: push drawers, restored receive card, and Bookstore source parity. */
 
 /* Wallet push drawer: only the icon tile is interactive; opening the drawer shifts the content instead of covering it. */
 .cw-shell { --cw-push-width:clamp(190px,24vw,228px); }

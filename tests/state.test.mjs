@@ -6,7 +6,7 @@ const { CampusBuddyCore: core } = loadBrowserScripts(['src/state.js']);
 
 test('canonical state stores one appearance representation', () => {
   const state = core.createState();
-  assert.deepEqual(Object.keys(state.buddy.appearance).sort(), ['bodyColor','eyeColor','hairColor','hairStyle','outfit']);
+  assert.deepEqual(Object.keys(state.buddy.appearance).sort(), ['bodyColor','bottom','eyeColor','footwear','hairColor','hairStyle','top']);
   assert.equal('shell' in state.buddy, false);
   assert.equal('signal' in state.buddy, false);
 });

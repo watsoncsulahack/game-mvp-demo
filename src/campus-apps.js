@@ -31,9 +31,9 @@
 
   const INTEGRATED_IDS = new Set(['wallet','faucet','bookstore']);
   const PRODUCTS = [
-    { id:'campus-hoodie', name:'Campus Hoodie', price:40, unlock:{ value:'hoodie', label:'Soft hoodie' } },
-    { id:'light-jacket', name:'Light Jacket', price:55, unlock:{ value:'jacket', label:'Light jacket' } },
-    { id:'study-notebook', name:'Study Notebook', price:15, unlock:null }
+    { id:'classic-campus-tee', name:'Classic Campus Tee', price:40, unlock:{ category:'top', value:'tee-classic', label:'Classic tee' } },
+    { id:'wide-leg-jeans', name:'Wide-Leg Jeans', price:55, unlock:{ category:'bottom', value:'jeans-wide-leg', label:'Wide-leg jeans' } },
+    { id:'low-top-sneakers', name:'Low-Top Sneakers', price:35, unlock:{ category:'footwear', value:'sneakers-low-top', label:'Low-top sneakers' } }
   ];
 
   let session = null;
@@ -472,7 +472,7 @@
     addTx(-product.price, `Campus Bookstore · ${product.name}`, { kind:'purchase', merchant:'Campus Bookstore' });
     session.orders.unshift({ id:`ORDER-${Date.now().toString(36).toUpperCase()}`, productId:product.id, name:product.name, price:product.price });
     if (product.unlock && !session.entitlements.some(entitlement => entitlement.productId === product.id)) {
-      session.entitlements.push({ productId:product.id, label:product.unlock.label, outfit:product.unlock.value });
+      session.entitlements.push({ productId:product.id, label:product.unlock.label, category:product.unlock.category, layer:product.unlock.value });
     }
     save();
     render('bookstore');
@@ -482,7 +482,9 @@
   function equip(id) {
     const entitlement = session.entitlements.find(candidate => candidate.productId === id);
     if (!entitlement) return;
-    document.querySelector(`[data-outfit="${entitlement.outfit}"]`)?.click();
+    const category=entitlement.category||'top';
+    const layer=entitlement.layer||(entitlement.outfit==='tee'?'tee-classic':'none');
+    document.querySelector(`[data-layer-category="${category}"][data-layer-id="${layer}"]`)?.click();
     notify(`${entitlement.label} equipped on Buddy.`);
   }
 

@@ -1,25 +1,5 @@
-/* Campus Buddy onboarding, Wallet, and Faucet interaction polish. */
-
-/* Design Buddy: stable three-column hierarchy with no layout shift when hair changes. */
-@media (min-width: 901px) {
-  .design-fields { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  .design-fields > label:first-child { grid-column:1 / -1; }
-  .design-fields fieldset:nth-of-type(1) { grid-column:1; }
-  .design-fields fieldset:nth-of-type(2) { grid-column:2; }
-  .design-fields fieldset:nth-of-type(3) { grid-column:3; }
-  .design-fields fieldset:nth-of-type(4) { grid-column:1; }
-  .design-fields fieldset:nth-of-type(6) { grid-column:2; }
-  #hairColorField { grid-column:3; }
-  .design-fields > .form-error { grid-column:1 / -1; }
-}
-@media (min-width:761px) and (max-width:900px) {
-  .design-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .design-fields > label:first-child,.design-fields > .form-error { grid-column:1 / -1; }
-}
-#hairColorField { display:block!important; }
-#hairColorField.is-disabled { border-color:#d5dce5!important; background:#f3f5f8!important; color:#8792a2; }
-#hairColorField.is-disabled legend,#hairColorField.is-disabled output { color:#9aa4b2!important; }
-#hairColorField.is-disabled input[type="range"] { opacity:.38; filter:grayscale(1); cursor:not-allowed; }
+/* Campus Wallet and Faucet interaction polish. Buddy customization now lives
+   entirely in the owning onboarding stylesheet. */
 
 /* Wallet: the Wallet mark itself is the sidebar toggle; content gets the full viewport by default. */
 .cw-shell .cw-mobile-menu { display:none!important; }

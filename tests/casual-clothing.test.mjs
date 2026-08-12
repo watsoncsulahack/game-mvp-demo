@@ -7,44 +7,40 @@ import { loadBrowserScripts, root } from './helpers.mjs';
 const context = loadBrowserScripts(['src/state.js','src/character.js']);
 const state = context.CampusBuddyCore.createState();
 const character = context.CampusBuddyCharacter;
-const views = Array.from(character.TURNAROUND_VIEWS);
 
-test('casual outfit uses precomposited Buddy frames instead of garment overlays', () => {
-  state.buddy.appearance.outfit = 'tee';
-  for (const view of views) {
-    const svg = character.renderCharacter(state.buddy,{angle:view.angle});
-    assert.match(svg,/assets\/buddy\/turnaround\/outfits\/casual\//);
-    assert.match(svg,/data-precomposited-outfit="casual"/);
-    assert.match(svg,/data-casual-outfit="true"/);
-    assert.doesNotMatch(svg,/assets\/buddy\/turnaround\/clothing\//);
-    assert.doesNotMatch(svg,/outfit-tee/);
+test('move-in look is three independently selectable garment layers', () => {
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(character.equippedLayers(state.buddy.appearance))),
+    {top:'tee-classic',bottom:'jeans-wide-leg',footwear:'sneakers-low-top'}
+  );
+  const markup=character.renderCharacter(state.buddy);
+  const body=markup.indexOf('data-character-layer="body"');
+  const top=markup.indexOf('data-character-layer="top"');
+  const bottom=markup.indexOf('data-character-layer="bottom"');
+  const footwear=markup.indexOf('data-character-layer="footwear"');
+  assert.ok(body<top&&top<bottom&&bottom<footwear,'layers should render in canonical order');
+});
+
+test('each selectable garment ships a transparent PNG for all eight views', () => {
+  for (const category of character.LAYER_ORDER) {
+    for (const [id,item] of Object.entries(character.CLOTHING_CATALOG[category])) {
+      if (!item.root) continue;
+      for (const view of character.TURNAROUND_VIEWS) {
+        const relative=character.layerFile(category,id,view);
+        const file=path.join(root,relative);
+        assert.ok(fs.existsSync(file),`${category}/${id}/${view.slug} should exist`);
+        const data=fs.readFileSync(file);
+        assert.ok(data.length>1000,`${relative} should contain image data`);
+        assert.equal(data.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
+      }
+    }
   }
 });
 
-test('casual turnaround maps eight angles onto five authored precomposited files', () => {
-  const expected = {
-    front:['front.webp',false],
-    'left-quarter-front':['left-quarter-front.webp',false],
-    'left-side':['left-side.webp',false],
-    'left-quarter-rear':['left-quarter-rear.webp',false],
-    rear:['rear.webp',false],
-    'right-quarter-rear':['left-quarter-rear.webp',true],
-    'right-side':['left-side.webp',true],
-    'right-quarter-front':['left-quarter-front.webp',true]
-  };
-  for (const view of views) {
-    const asset = character.CASUAL_VIEWS[view.slug];
-    assert.deepEqual([asset.file,asset.mirror],expected[view.slug]);
-  }
-});
-
-test('authored casual precomposited WebP assets exist', () => {
-  for (const fileName of ['front.webp','left-quarter-front.webp','left-side.webp','left-quarter-rear.webp','rear.webp']) {
-    const file = path.join(root,'assets/buddy/turnaround/outfits/casual',fileName);
-    assert.ok(fs.existsSync(file),`${fileName} should exist`);
-    const data = fs.readFileSync(file);
-    assert.ok(data.length > 1000,`${fileName} should contain image data`);
-    assert.equal(data.subarray(0,4).toString('ascii'),'RIFF');
-    assert.equal(data.subarray(8,12).toString('ascii'),'WEBP');
-  }
+test('unknown or legacy garment values safely fall back to no layer', () => {
+  Object.assign(state.buddy.appearance,{top:'hoodie',bottom:'missing',footwear:null});
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(character.equippedLayers(state.buddy.appearance))),
+    {top:'none',bottom:'none',footwear:'none'}
+  );
 });

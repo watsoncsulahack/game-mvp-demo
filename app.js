@@ -10,9 +10,9 @@
   const modal = UI.createModalManager();
   const $ = (selector, root=document) => root.querySelector(selector);
   const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
-  const previewLabels = Object.fromEntries(Character.TURNAROUND_VIEWS.map(view => [view.angle,view.label]));
   let toastTimer = null;
   let focusTimer = null;
+  let imageReadySerial = 0;
 
   const explorer = Explorer.createExplorer({
     state,
@@ -44,6 +44,14 @@
     $('#artViewport').setAttribute('aria-label', `Rotate Buddy. ${view.label} view, ${view.index+1} of 8. Drag horizontally or use Left and Right Arrow keys.`);
   }
 
+  function markImagesReady() {
+    const serial = ++imageReadySerial;
+    document.documentElement.dataset.characterAssets = 'loading';
+    Character.whenImagesReady().then(()=>{
+      if (serial === imageReadySerial) document.documentElement.dataset.characterAssets = 'ready';
+    });
+  }
+
   function renderBuddyEverywhere() {
     renderPreview();
     $('#initArt').innerHTML = Character.renderCharacter(state.buddy);
@@ -54,6 +62,7 @@
     $('#headerBuddyName').textContent = state.buddy.name;
     $('#dialogueName').textContent = state.buddy.name;
     $('#quickSpeaker').textContent = state.buddy.name;
+    markImagesReady();
   }
 
   function setStep(step) {
@@ -74,9 +83,16 @@
 
   function syncCustomization() {
     selectButtons('[data-disposition]',state.buddy.disposition,'disposition');
-    selectButtons('[data-hair]',state.buddy.appearance.hairStyle,'hair');
-    selectButtons('[data-outfit]',state.buddy.appearance.outfit,'outfit');
-    $('#hairColorField').hidden = state.buddy.appearance.hairStyle === 'none';
+    const selected = Character.equippedLayers(state.buddy.appearance);
+    let count = 0;
+    for (const category of Character.LAYER_ORDER) {
+      $$(`[data-layer-category="${category}"]`).forEach(button=>button.classList.toggle('active',button.dataset.layerId===selected[category]));
+      const item = Character.CLOTHING_CATALOG[category][selected[category]];
+      $(`#${category}Selection`).textContent = item.shortLabel;
+      if (item.root) count += 1;
+    }
+    $('#lookName').textContent = count === 3 ? 'Move-in casual' : count ? 'Custom mix' : 'Blank canvas';
+    $('#lookLayerCount').textContent = `${count} ${count === 1 ? 'layer' : 'layers'} · 8 views`;
     renderBuddyEverywhere();
   }
 
@@ -87,41 +103,42 @@
       button.addEventListener('click',()=>{state.buddy.disposition=key;$('#dispositionHelp').textContent=description;syncCustomization();});
       $('#dispositionChoices').append(button);
     });
-    for (const [key,label] of Object.entries({none:'None',swept:'Swept',bob:'Bob',cloud:'Cloud'})) {
-      const button=document.createElement('button'); button.type='button'; button.dataset.hair=key; button.textContent=label;
-      button.addEventListener('click',()=>{state.buddy.appearance.hairStyle=key;syncCustomization();}); $('#hairChoices').append(button);
+    for (const category of Character.LAYER_ORDER) {
+      for (const [id,item] of Object.entries(Character.CLOTHING_CATALOG[category])) {
+        const button=document.createElement('button'); button.type='button'; button.className='wardrobe-option';
+        button.dataset.layerCategory=category; button.dataset.layerId=id;
+        button.innerHTML=`<span class="wardrobe-option-art">${Character.renderLayerThumbnail(category,id)}</span><span class="wardrobe-option-copy"><strong>${item.shortLabel}</strong><small>${item.description}</small></span>`;
+        button.addEventListener('click',()=>{state.buddy.appearance[category]=id;syncCustomization();});
+        $(`#${category}Choices`).append(button);
+      }
     }
-    for (const [key,label] of Object.entries({none:'None',tee:'Campus tee',hoodie:'Soft hoodie',jacket:'Light jacket'})) {
-      const button=document.createElement('button'); button.type='button'; button.dataset.outfit=key; button.textContent=label;
-      button.addEventListener('click',()=>{state.buddy.appearance.outfit=key;syncCustomization();}); $('#outfitChoices').append(button);
-    }
-    const hue = (id,output,property,saturation,lightness) => $('#'+id).addEventListener('input',event=>{
-      const color=Core.hslToHex(Number(event.target.value),saturation,lightness);
-      state.buddy.appearance[property]=color; $('#'+output).value=color; renderBuddyEverywhere();
-    });
-    hue('bodyHue','bodyColorOutput','bodyColor',80,92);
-    hue('eyeHue','eyeColorOutput','eyeColor',82,48);
-    hue('hairHue','hairColorOutput','hairColor',58,28);
     syncCustomization();
   }
 
   function fillReview() {
     const profile=Core.profileFromEmail(state.email); state.campus=profile.campus; state.identity=profile.identity;
     $('#reviewName').textContent=state.buddy.name; $('#reviewDisposition').textContent=Core.capitalize(state.buddy.disposition);
+    const selected=Character.equippedLayers(state.buddy.appearance); const labels=Character.LAYER_ORDER.map(category=>Character.CLOTHING_CATALOG[category][selected[category]]).filter(item=>item.root).map(item=>item.shortLabel);
+    $('#reviewLook').textContent=labels.join(' · ')||'Base Buddy';
     $('#reviewEmail').textContent=state.email; $('#reviewCampus').textContent=state.campus; $('#reviewIdentity').textContent=state.identity;
+  }
+
+  function positionRoomBuddy() {
+    const scene=$('#roomScene'); const art=$('#roomBuddyArt'); if(!art)return;
+    const activity=Room.activityModel(state.activity).buddy; const rect=scene.getBoundingClientRect();
+    const scale=Math.min(rect.width/1200,rect.height/650); const offsetX=(rect.width-1200*scale)/2; const offsetY=(rect.height-650*scale)/2;
+    art.style.left=`${offsetX+activity.x*scale}px`; art.style.top=`${offsetY+activity.y*scale}px`;
+    art.style.width=`${256*activity.scale*scale}px`; art.style.height=`${640*activity.scale*scale}px`;
+    const hit=$('#roomBuddyHit'); hit.style.left=`${offsetX+(activity.x+128*activity.scale)*scale}px`; hit.style.top=`${offsetY+(activity.y+320*activity.scale)*scale}px`;
+    hit.style.width=`${Math.max(70,180*activity.scale*scale)}px`; hit.style.height=`${Math.max(150,360*activity.scale*scale)}px`;
   }
 
   function updateHome() {
     document.documentElement.dataset.roomTheme=state.room;
-    $('#roomScene').innerHTML=Room.roomSceneSvg(state);
-    $('#dialogueBackground').innerHTML=Room.roomSceneSvg(state,{includeBuddy:false,includeStatus:false});
+    $('#roomScene').innerHTML=`${Room.roomSceneSvg(state)}<div id="roomBuddyArt" class="room-buddy-art">${Character.renderCharacter(state.buddy,{pose:Room.activityModel(state.activity).buddy.pose})}</div>`;
+    $('#dialogueBackground').innerHTML=Room.roomSceneSvg(state,{includeStatus:false});
     $('#headerBuddyState').textContent=Room.activityLabel(state.activity);
-    const activity=Room.activityModel(state.activity).buddy;
-    const hit=$('#roomBuddyHit');
-    hit.style.left=`${((activity.x+160*activity.scale)/1200)*100}%`;
-    hit.style.top=`${((activity.y+250*activity.scale)/650)*100}%`;
-    hit.style.width=`${Math.max(8,(180*activity.scale/1200)*100)}%`;
-    hit.style.height=`${Math.max(18,(360*activity.scale/650)*100)}%`;
+    positionRoomBuddy(); markImagesReady();
     updateClock();
   }
 
@@ -172,6 +189,11 @@
     $('#designBack').addEventListener('click',()=>setStep(1));
     $('#designForm').addEventListener('submit',event=>{event.preventDefault();if(!state.buddy.name.trim()){ $('#designError').textContent='Give your Buddy a name.';return;}$('#designError').textContent='';fillReview();setStep(3);});
     $('#reviewBack').addEventListener('click',()=>setStep(2)); $('#initializeBuddy').addEventListener('click',initializeBuddy);
+    $$('[data-look-preset]').forEach(button=>button.addEventListener('click',()=>{
+      const moveIn=button.dataset.lookPreset==='move-in';
+      Object.assign(state.buddy.appearance,moveIn?{top:'tee-classic',bottom:'jeans-wide-leg',footwear:'sneakers-low-top'}:{top:'none',bottom:'none',footwear:'none'});
+      syncCustomization();
+    }));
     $$('.room-card').forEach(card=>card.addEventListener('click',()=>{state.room=card.dataset.room;$$('.room-card').forEach(other=>other.classList.toggle('selected',other===card));}));
     let dragging=false,startX=0,startAngle=0,pointerId=null; const viewport=$('#artViewport');
     const rotate=delta=>{state.previewAngle=Core.normalizeAngle(state.previewAngle+delta);renderPreview();};
@@ -207,6 +229,7 @@
     $('#consoleBack').addEventListener('click',closeConsoleTool); $('#consoleB').addEventListener('click',()=>state.consoleTool?closeConsoleTool():$('#consoleActions').hidden=true); $('#consoleA').addEventListener('click',()=>{$('#consoleActions').hidden=!$('#consoleActions').hidden;});
     $('#consoleMic').addEventListener('click',()=>{$('#consoleRemark').textContent='I heard you. Voice recognition is represented as a local demo action.';$('#consoleRemark').hidden=false;}); $('#consoleRemark').addEventListener('click',event=>event.currentTarget.hidden=true);
     $('#consoleToolContent').addEventListener('click',event=>{if(event.target.matches('[data-console-sample]')){$('#consoleRemark').textContent='You have two important blocks today. I can help prepare either one.';$('#consoleRemark').hidden=false;closeConsoleTool();}if(event.target.matches('[data-calculate]')){try{$('#consoleCalcResult').textContent=String(Core.evaluateArithmetic($('#consoleCalcInput').value));}catch{$('#consoleCalcResult').textContent='Invalid expression';}}if(event.target.matches('[data-focus-start]')){stopFocusTimer();let seconds=25*60;const readout=$('#focusReadout');event.target.disabled=true;focusTimer=setInterval(()=>{seconds-=1;readout.textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;if(seconds<=0)stopFocusTimer();},1000);}});
+    $('#panelContent').addEventListener('click',event=>{const button=event.target.closest('[data-panel-layer-category]');if(!button)return;state.buddy.appearance[button.dataset.panelLayerCategory]=button.dataset.layerId;renderBuddyEverywhere();updateHome();const [title,kicker,content]=UI.panelData(state,'customize');$('#panelTitle').textContent=title;$('#panelKicker').textContent=kicker;$('#panelContent').innerHTML=content;});
   }
 
   function setupKeyboard() {
@@ -214,8 +237,23 @@
     document.addEventListener('keyup',event=>explorer.release(event.key.toLowerCase())); window.addEventListener('blur',explorer.stop);
   }
 
+  function applyCaptureFrame() {
+    const frame=new URLSearchParams(location.search).get('frame'); if(!frame)return;
+    document.documentElement.dataset.figmaFrame=frame; state.email='mika@student.csulb.edu'; $('#studentEmail').value=state.email;
+    if(frame==='customizer-empty') Object.assign(state.buddy.appearance,{top:'none',bottom:'none',footwear:'none'});
+    if(frame==='customizer'||frame==='customizer-empty') return syncCustomization(),setStep(2);
+    if(frame==='review') return fillReview(),setStep(3);
+    if(frame==='home'){fillReview();$('#onboarding').hidden=true;$('#game').hidden=false;renderBuddyEverywhere();return setView('room');}
+    if(frame==='turnaround'){
+      $('#onboarding').hidden=true; $('#game').hidden=true;
+      const board=document.createElement('section'); board.className='turnaround-board'; board.setAttribute('aria-label','Buddy outfit turnaround');
+      board.innerHTML=`<header><div><span>FIGMA CAPTURE BOARD</span><h1>Move-in casual · eight-view turnaround</h1></div><p>Body, top, bottom, and footwear share a 256 × 640 frame and bottom-center anchor.</p></header><div class="turnaround-grid">${Character.TURNAROUND_VIEWS.map(view=>`<article><div>${Character.renderCharacter(state.buddy,{angle:view.angle})}</div><strong>${view.label}</strong><span>${view.angle}° · 4 image layers</span></article>`).join('')}</div>`;
+      $('#app').prepend(board); markImagesReady();
+    }
+  }
+
   buildChoices(); setupOnboarding(); setupGame(); setupOverlays(); setupKeyboard();
   $$('[data-room-preview]').forEach(canvas=>Room.drawRoomPreview(canvas,canvas.dataset.roomPreview));
-  syncViewportHeight(); window.visualViewport?.addEventListener('resize',syncViewportHeight); window.addEventListener('resize',()=>{syncViewportHeight();if(state.view==='explorer'&&!$('#game').hidden)explorer.draw();});
-  renderBuddyEverywhere(); setStep(1); updateClock(); setInterval(updateClock,30000);
+  syncViewportHeight(); window.visualViewport?.addEventListener('resize',syncViewportHeight); window.addEventListener('resize',()=>{syncViewportHeight();if(state.view==='explorer'&&!$('#game').hidden)explorer.draw();else positionRoomBuddy();});
+  renderBuddyEverywhere(); setStep(1); updateClock(); applyCaptureFrame(); setInterval(updateClock,30000);
 })();

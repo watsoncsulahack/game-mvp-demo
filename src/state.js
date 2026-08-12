@@ -6,7 +6,9 @@
     eyeColor: '#171923',
     hairStyle: 'none',
     hairColor: '#26354D',
-    outfit: 'none'
+    top: 'tee-classic',
+    bottom: 'jeans-wide-leg',
+    footwear: 'sneakers-low-top'
   });
 
   const DISPOSITIONS = Object.freeze({

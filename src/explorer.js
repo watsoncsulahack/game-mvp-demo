@@ -61,6 +61,14 @@
     ctx.lineWidth = 2*px;
     ctx.beginPath(); ctx.arc(0, -7*px, 5*px, 0, Math.PI*2); ctx.fill(); ctx.stroke();
     ctx.fillRect(-5*px, -2*px, 10*px, 10*px); ctx.strokeRect(-5*px, -2*px, 10*px, 10*px);
+    if (appearance.top !== 'none') {
+      ctx.fillStyle = '#FFF7E8'; ctx.fillRect(-5*px, -2*px, 10*px, 5*px);
+      ctx.strokeRect(-5*px, -2*px, 10*px, 5*px);
+    }
+    if (appearance.bottom !== 'none') {
+      ctx.fillStyle = '#7899BD'; ctx.fillRect(-4*px, 3*px, 8*px, 5*px);
+      ctx.strokeRect(-4*px, 3*px, 8*px, 5*px);
+    }
     ctx.fillStyle = appearance.eyeColor;
     ctx.fillRect(-2.8*px, -9*px, 1.3*px, 4*px); ctx.fillRect(1.5*px, -9*px, 1.3*px, 4*px);
     if (appearance.hairStyle !== 'none') {
@@ -70,6 +78,9 @@
     const stride = state.player.walkFrame ? px : -px;
     ctx.strokeStyle = '#11131A'; ctx.lineWidth = 2*px;
     ctx.beginPath(); ctx.moveTo(-2*px, 8*px); ctx.lineTo(-3*px+stride, 12*px); ctx.moveTo(2*px, 8*px); ctx.lineTo(3*px-stride, 12*px); ctx.stroke();
+    if (appearance.footwear !== 'none') {
+      ctx.fillStyle='#FFF7E8'; ctx.fillRect((-5*px)+stride,11*px,5*px,2*px); ctx.fillRect(-stride,11*px,5*px,2*px);
+    }
     ctx.restore();
   }
 
