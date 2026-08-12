@@ -1,0 +1,98 @@
+/* Definitive Bookstore-style push drawers for Campus Wallet and Campus Faucet.
+   The first grid column grows from zero to the drawer width; drawers never
+   absolutely overlay or block the main app content. */
+
+.cw-shell { --cw-push-width:clamp(190px,24vw,228px); }
+.cw-shell .cw-frame {
+  display:grid!important;
+  grid-template-columns:0 minmax(0,1fr)!important;
+  transition:grid-template-columns .22s ease!important;
+  overflow:hidden!important;
+}
+.cw-shell .cw-frame:has(.cw-sidebar.open),
+.cw-shell.campus-push-drawer-open .cw-frame {
+  grid-template-columns:var(--cw-push-width) minmax(0,1fr)!important;
+}
+.cw-shell .cw-sidebar {
+  position:relative!important;
+  inset:auto!important;
+  grid-column:1!important;
+  grid-row:1!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  transform:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  overflow:hidden auto!important;
+  box-shadow:none!important;
+  transition:opacity .16s ease,visibility .16s ease!important;
+}
+.cw-shell .cw-sidebar.open {
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+.cw-shell .cw-main {
+  grid-column:2!important;
+  grid-row:1!important;
+  min-width:0!important;
+  width:100%!important;
+  transform:none!important;
+}
+.cw-shell .cw-scrim {
+  display:none!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+
+.cf-shell { --cf-push-width:clamp(205px,27vw,270px); }
+.cf-shell .cf-body {
+  display:grid!important;
+  grid-template-columns:0 minmax(0,1fr)!important;
+  transition:grid-template-columns .22s ease!important;
+  overflow:hidden!important;
+}
+.cf-shell .cf-body:has(.cf-drawer.open),
+.cf-shell.campus-push-drawer-open .cf-body {
+  grid-template-columns:var(--cf-push-width) minmax(0,1fr)!important;
+}
+.cf-shell .cf-drawer {
+  position:relative!important;
+  inset:auto!important;
+  grid-column:1!important;
+  grid-row:1!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  transform:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  overflow:hidden auto!important;
+  box-shadow:none!important;
+  transition:opacity .16s ease,visibility .16s ease!important;
+}
+.cf-shell .cf-drawer.open {
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+.cf-shell .cf-main {
+  grid-column:2!important;
+  grid-row:1!important;
+  min-width:0!important;
+  width:100%!important;
+  transform:none!important;
+}
+.cf-shell .cf-drawer-scrim {
+  display:none!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+
+@media(max-width:720px){
+  .cw-shell{--cw-push-width:min(190px,42vw)}
+  .cf-shell{--cf-push-width:min(205px,46vw)}
+}
