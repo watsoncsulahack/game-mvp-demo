@@ -125,7 +125,7 @@
       ctx.beginPath();
       ctx.arc(left + (state.player.displayX / ROOM_GRID.cols)*width, top + (state.player.displayY / ROOM_GRID.rows)*height, 4, 0, Math.PI*2);
       ctx.fill();
-      ctx.strokeStyle = '#09131F'; ctx.ineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = '#09131F'; ctx.lineWidth = 1.5; ctx.stroke();
     }
 
     function draw() {
@@ -156,14 +156,14 @@
       ctx.fillStyle = theme.bedding; ctx.fillRect((bed.x+.15)*unit,(bed.y+.15)*unit,(bed.w-.3)*unit,(bed.h-.3)*unit);
 
       const desk = window.CampusBuddyRoom.objectById('desk').grid;
-      ctx.fillStyle = '#85532F'; ctx.fillRect(desk.x*unit,desk.y*unit,desk.w*unit,desk.h*unit); ctx.strokeRect(desk.x*unit,desk.y*unit,desk.w*anit,desk.h*unit);
+      ctx.fillStyle = '#85532F'; ctx.fillRect(desk.x*unit,desk.y*unit,desk.w*unit,desk.h*unit); ctx.strokeRect(desk.x*unit,desk.y*unit,desk.w*unit,desk.h*unit);
       ctx.fillStyle = '#233C66'; ctx.fillRect((desk.x+1.2)*unit,(desk.y-.95)*unit,1.6*unit,.9*unit);
 
       const shelf = window.CampusBuddyRoom.objectById('bookshelf').grid;
       ctx.fillStyle = '#705038'; ctx.fillRect(shelf.x*unit,shelf.y*unit,shelf.w*unit,shelf.h*unit); ctx.strokeRect(shelf.x*unit,shelf.y*unit,shelf.w*unit,shelf.h*unit);
       ctx.fillStyle = theme.rug; ctx.fillRect(6*unit,5*unit,4*unit,3*unit); ctx.strokeRect(6*unit,5*unit,4*unit,3*unit);
       ctx.fillStyle = '#24314B'; ctx.fillRect(7*unit,9*unit,2*unit,unit);
-      drawPixelBuddy(ctx, state,(state.player.displayX+.5)*unit,(state.player.displayY+.55)*unit,unit);
+      drawPixelBuddy(ctx,state,(state.player.displayX+.5)*unit,(state.player.displayY+.55)*unit,unit);
       if (state.time === 'night') { ctx.fillStyle='rgba(15,31,67,.25)'; ctx.fillRect(0,0,width,height); }
       ctx.restore();
 
