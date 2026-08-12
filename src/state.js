@@ -20,7 +20,7 @@
   });
 
   function createState() {
-    return {
+    const state = {
       onboardingStep: 1,
       email: '',
       campus: 'University',
@@ -28,7 +28,6 @@
       room: 'sunlit',
       time: 'day',
       view: 'room',
-      wallet: 60,
       buddy: {
         name: 'Mika',
         disposition: 'curious',
@@ -47,6 +46,8 @@
       previewAngle: 0,
       consoleTool: null
     };
+    if (typeof window !== 'undefined') window.CampusBuddyState = state;
+    return state;
   }
 
   function hashText(text) {

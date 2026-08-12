@@ -4,7 +4,12 @@
   const { normalizeAngle, escapeHtml } = window.CampusBuddyCore;
   const ASSET_ROOT = 'assets/buddy/turnaround';
   const VIEWS_ROOT = `${ASSET_ROOT}/views`;
+  const COSMETIC_ATLAS = `${ASSET_ROOT}/layers-atlas.png`;
   const FRAME = Object.freeze({ width:256, height:640, anchor:Object.freeze({ x:128, y:640, name:'bottom-center' }) });
+  const ATLAS_WIDTH = FRAME.width * 8;
+  const ATLAS_HEIGHT = FRAME.height * 15;
+  const SOURCE_BODY_COLOR = '#F7FBFC';
+  const SOURCE_EYE_COLOR = '#171923';
 
   const TURNAROUND_VIEWS = Object.freeze([
     { angle:0, index:0, slug:'front', label:'Front', file:`${VIEWS_ROOT}/front.png` },
@@ -33,6 +38,17 @@
   });
 
   const LAYER_ORDER = Object.freeze(['top','bottom','footwear']);
+  const COSMETIC_ROWS = Object.freeze({
+    body:0,
+    eyes:2,
+    'hair-swept':3,
+    'hair-swept-line':4,
+    'hair-bob':5,
+    'hair-bob-line':6,
+    'hair-cloud':7,
+    'hair-cloud-line':8
+  });
+  let renderSerial = 0;
 
   function viewForAngle(angle) {
     const normalized = normalizeAngle(angle);
@@ -41,7 +57,7 @@
 
   function assetUrl(file) {
     if (typeof document === 'undefined' || !document.baseURI || typeof URL === 'undefined') return file;
-    try { return new URL(file,document.baseURI).href; } catch { return file; }
+    try { return new URL(file, document.baseURI).href; } catch { return file; }
   }
 
   function selectedLayer(appearance, category) {
@@ -58,12 +74,47 @@
   }
 
   function equippedLayers(appearance) {
-    return Object.fromEntries(LAYER_ORDER.map(category => [category,selectedLayer(appearance,category)]));
+    return Object.fromEntries(LAYER_ORDER.map(category => [category, selectedLayer(appearance, category)]));
   }
 
   function layerImage(file, category, id, extraClass = '') {
     const source = assetUrl(file);
     return `<img class="buddy-sprite-layer buddy-sprite-layer--${category}${extraClass ? ` ${extraClass}` : ''}" src="${source}" data-source-path="${file}" data-character-layer="${category}" data-layer-id="${id}" width="${FRAME.width}" height="${FRAME.height}" alt="" aria-hidden="true" loading="eager" decoding="sync" draggable="false">`;
+  }
+
+  function atlasMask(id, row, viewIndex) {
+    const x = -viewIndex * FRAME.width;
+    const y = -row * FRAME.height;
+    return `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="${FRAME.width}" height="${FRAME.height}" style="mask-type:luminance"><image href="${assetUrl(COSMETIC_ATLAS)}" x="${x}" y="${y}" width="${ATLAS_WIDTH}" height="${ATLAS_HEIGHT}"/></mask>`;
+  }
+
+  function cosmeticLayer(appearance, view, placement) {
+    const defs = [];
+    const fills = [];
+    const prefix = `cosmetic-${++renderSerial}-${view.index}-${placement}`;
+    if (placement === 'under' && String(appearance.bodyColor || '').toUpperCase() !== SOURCE_BODY_COLOR) {
+      const id = `${prefix}-body`;
+      defs.push(atlasMask(id, COSMETIC_ROWS.body, view.index));
+      fills.push(`<rect width="256" height="640" fill="${escapeHtml(appearance.bodyColor)}" mask="url(#${id})"/>`);
+    }
+    if (placement === 'over') {
+      if (String(appearance.eyeColor || '').toUpperCase() !== SOURCE_EYE_COLOR) {
+        const id = `${prefix}-eyes`;
+        defs.push(atlasMask(id, COSMETIC_ROWS.eyes, view.index));
+        fills.push(`<rect width="256" height="640" fill="${escapeHtml(appearance.eyeColor)}" mask="url(#${id})"/>`);
+      }
+      const hair = ['swept','bob','cloud'].includes(appearance.hairStyle) ? appearance.hairStyle : 'none';
+      if (hair !== 'none') {
+        const fillId = `${prefix}-hair`;
+        const lineId = `${prefix}-hair-line`;
+        defs.push(atlasMask(fillId, COSMETIC_ROWS[`hair-${hair}`], view.index));
+        defs.push(atlasMask(lineId, COSMETIC_ROWS[`hair-${hair}-line`], view.index));
+        fills.push(`<rect width="256" height="640" fill="${escapeHtml(appearance.hairColor || '#26354D')}" mask="url(#${fillId})"/>`);
+        fills.push(`<rect width="256" height="640" fill="#111318" mask="url(#${lineId})"/>`);
+      }
+    }
+    if (!fills.length) return '';
+    return `<svg class="buddy-sprite-cosmetics buddy-sprite-cosmetics--${placement}" viewBox="0 0 256 640" aria-hidden="true" data-character-cosmetics="${placement}">${defs.length ? `<defs>${defs.join('')}</defs>` : ''}${fills.join('')}</svg>`;
   }
 
   function renderCharacter(buddy, { angle=0, crop='full', pose='standing' } = {}) {
@@ -75,26 +126,32 @@
       .map(category => CLOTHING_CATALOG[category][selected[category]])
       .filter(item => item.root)
       .map(item => item.shortLabel.toLowerCase());
-    const label = `${buddy.name} ${view.label.toLowerCase()} view${garmentNames.length ? ` wearing ${garmentNames.join(', ')}` : ''}`;
-    const layers = [layerImage(view.file,'body','base','buddy-sprite-layer--body')];
+    const hairLabel = appearance.hairStyle && appearance.hairStyle !== 'none' ? ` with ${appearance.hairStyle} hair` : '';
+    const label = `${buddy.name} ${view.label.toLowerCase()} view${garmentNames.length ? ` wearing ${garmentNames.join(', ')}` : ''}${hairLabel}`;
+    const layers = [layerImage(view.file, 'body', 'base', 'buddy-sprite-layer--body')];
+    const underCosmetics = cosmeticLayer(appearance, view, 'under');
+    if (underCosmetics) layers.push(underCosmetics);
 
     for (const category of LAYER_ORDER) {
       const id = selected[category];
-      const file = layerFile(category,id,view);
-      if (file) layers.push(layerImage(file,category,id));
+      const file = layerFile(category, id, view);
+      if (file) layers.push(layerImage(file, category, id));
     }
+
+    const overCosmetics = cosmeticLayer(appearance, view, 'over');
+    if (overCosmetics) layers.push(overCosmetics);
 
     return `<span class="buddy-sprite buddy-sprite--${cropName}" role="img" aria-label="${escapeHtml(label)}" data-turnaround-view="${view.slug}" data-buddy-angle="${view.angle}" data-pose="${escapeHtml(pose)}" data-anchor="${FRAME.anchor.name}" data-anchor-x="${FRAME.anchor.x}" data-anchor-y="${FRAME.anchor.y}"><span class="buddy-sprite-frame">${layers.join('')}</span></span>`;
   }
 
   function renderConsoleHead(buddy) {
-    return renderCharacter(buddy,{crop:'bust'}).replace('class="buddy-sprite ','class="buddy-sprite buddy-sprite--console ');
+    return renderCharacter(buddy, { crop:'bust' }).replace('class="buddy-sprite ', 'class="buddy-sprite buddy-sprite--console ');
   }
 
   function renderLayerThumbnail(category, id) {
     const item = CLOTHING_CATALOG[category]?.[id];
     if (!item?.root) return '<span class="wardrobe-empty-art" aria-hidden="true">None</span>';
-    const file = layerFile(category,id,TURNAROUND_VIEWS[0]);
+    const file = layerFile(category, id, TURNAROUND_VIEWS[0]);
     return `<img src="${assetUrl(file)}" data-source-path="${file}" width="${FRAME.width}" height="${FRAME.height}" alt="" aria-hidden="true" loading="eager" decoding="sync" draggable="false">`;
   }
 
@@ -104,8 +161,8 @@
       if (image.complete && image.naturalWidth) return Promise.resolve();
       if (typeof image.decode === 'function') return image.decode().catch(()=>{});
       return new Promise(resolve => {
-        image.addEventListener('load',resolve,{once:true});
-        image.addEventListener('error',resolve,{once:true});
+        image.addEventListener('load', resolve, { once:true });
+        image.addEventListener('error', resolve, { once:true });
       });
     }));
   }
@@ -113,6 +170,7 @@
   window.CampusBuddyCharacter = Object.freeze({
     ASSET_ROOT,
     VIEWS_ROOT,
+    COSMETIC_ATLAS,
     FRAME,
     TURNAROUND_VIEWS,
     CLOTHING_CATALOG,

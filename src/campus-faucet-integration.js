@@ -6,7 +6,6 @@
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
     ['campus-faucet-cards', 'styles/campus-faucet-cards.css'],
     ['campus-swap', 'styles/campus-swap.css'],
-    ['campus-wallet-balance-fix', 'styles/campus-wallet-balance-fix.css'],
     ['campus-bookstore', 'styles/campus-bookstore.css'],
     ['campus-bookstore-catalog', 'styles/campus-bookstore-catalog.css'],
     ['campus-bookstore-overlays', 'styles/campus-bookstore-overlays.css'],
@@ -14,9 +13,9 @@
     ['campus-bookstore-selection', 'styles/campus-bookstore-selection.css'],
     ['campus-bookstore-parity', 'styles/campus-bookstore-parity.css'],
     ['campus-bookstore-wallet-checkout', 'styles/campus-bookstore-wallet-checkout.css'],
-    ['campus-ui-polish', 'styles/campus-ui-polish.css'],
-    ['campus-ui-polish-v2', 'styles/campus-ui-polish-v2.css'],
-    ['campus-drawer-grid-fix', 'styles/campus-drawer-grid-fix.css']
+    ['campus-bookstore-assistant', 'styles/campus-bookstore-assistant.css'],
+    ['campus-app-runtime', 'styles/campus-app-runtime.css'],
+    ['buddy-demo-runtime', 'styles/buddy-demo-runtime.css']
   ];
 
   styles.forEach(([name, href]) => {
@@ -28,100 +27,48 @@
     document.head.appendChild(link);
   });
 
-  function loadUiPolishV2() {
-    if (document.querySelector('script[data-campus-ui-polish-v2]')) return;
-    const script = document.createElement('script');
-    script.src = 'src/campus-ui-polish-v2.js';
-    script.async = false;
-    script.dataset.campusUiPolishV2 = '';
-    document.head.appendChild(script);
-  }
-
-  function loadUiPolish() {
-    if (document.querySelector('script[data-campus-ui-polish]')) {
-      loadUiPolishV2();
+  function loadScript({ marker, src, next }) {
+    const existing = document.querySelector(`script[${marker}]`);
+    if (existing) {
+      if (typeof next === 'function') next();
       return;
     }
     const script = document.createElement('script');
-    script.src = 'src/campus-ui-polish.js';
+    script.src = src;
     script.async = false;
-    script.dataset.campusUiPolish = '';
-    script.addEventListener('load', loadUiPolishV2, { once:true });
+    script.setAttribute(marker, '');
+    if (typeof next === 'function') script.addEventListener('load', next, { once:true });
     document.head.appendChild(script);
   }
 
-  function loadBookstoreWalletCheckout() {
-    if (document.querySelector('script[data-campus-bookstore-wallet-checkout]')) return;
-    const script = document.createElement('script');
-    script.src = 'src/campus-bookstore-wallet-checkout.js';
-    script.async = false;
-    script.dataset.campusBookstoreWalletCheckout = '';
-    document.head.appendChild(script);
+  function loadRuntime() {
+    loadScript({ marker:'data-campus-email-qr', src:'src/campus-email-qr.js', next:() =>
+      loadScript({ marker:'data-campus-app-runtime', src:'src/campus-app-runtime.js', next:() =>
+        loadScript({ marker:'data-buddy-demo-runtime', src:'src/buddy-demo-runtime.js' })
+      })
+    });
+  }
+
+  function loadAssistant() {
+    loadScript({ marker:'data-campus-bookstore-assistant', src:'src/campus-bookstore-assistant.js' });
+  }
+
+  function loadBookstoreCheckout() {
+    loadScript({ marker:'data-campus-bookstore-wallet-checkout', src:'src/campus-bookstore-wallet-checkout.js', next:loadAssistant });
   }
 
   function loadBookstoreParity() {
-    if (document.querySelector('script[data-campus-bookstore-parity]')) {
-      loadBookstoreWalletCheckout();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'src/campus-bookstore-parity.js';
-    script.async = false;
-    script.dataset.campusBookstoreParity = '';
-    script.addEventListener('load', loadBookstoreWalletCheckout, { once:true });
-    document.head.appendChild(script);
+    loadScript({ marker:'data-campus-bookstore-parity', src:'src/campus-bookstore-parity.js', next:loadBookstoreCheckout });
   }
 
   function loadBookstoreSelection() {
-    if (document.querySelector('script[data-campus-bookstore-selection]')) {
-      loadBookstoreParity();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'src/campus-bookstore-selection.js';
-    script.async = false;
-    script.dataset.campusBookstoreSelection = '';
-    script.addEventListener('load', loadBookstoreParity, { once:true });
-    document.head.appendChild(script);
+    loadScript({ marker:'data-campus-bookstore-selection', src:'src/campus-bookstore-selection.js', next:loadBookstoreParity });
   }
 
   function loadBookstore() {
-    if (document.querySelector('script[data-campus-bookstore-v1]')) {
-      loadBookstoreSelection();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'src/campus-bookstore-integration.js';
-    script.async = false;
-    script.dataset.campusBookstoreV1 = '';
-    script.addEventListener('load', loadBookstoreSelection, { once:true });
-    document.head.appendChild(script);
-  }
-
-  function loadBalanceFix() {
-    if (document.querySelector('script[data-campus-wallet-balance-fix]')) {
-      loadUiPolish();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'src/campus-wallet-balance-fix.js';
-    script.async = false;
-    script.dataset.campusWalletBalanceFix = '';
-    script.addEventListener('load', loadUiPolish, { once:true });
-    document.head.appendChild(script);
+    loadScript({ marker:'data-campus-bookstore-v1', src:'src/campus-bookstore-integration.js', next:loadBookstoreSelection });
   }
 
   loadBookstore();
-
-  if (document.querySelector('script[data-campus-faucet-v4]')) {
-    loadBalanceFix();
-    return;
-  }
-
-  const script = document.createElement('script');
-  script.src = 'src/campus-faucet-integration-v4.js';
-  script.async = false;
-  script.dataset.campusFaucetV4 = '';
-  script.addEventListener('load', loadBalanceFix, { once:true });
-  document.head.appendChild(script);
+  loadScript({ marker:'data-campus-faucet-v4', src:'src/campus-faucet-integration-v4.js', next:loadRuntime });
 })();

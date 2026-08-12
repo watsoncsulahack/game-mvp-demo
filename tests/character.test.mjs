@@ -26,8 +26,8 @@ test('character manifest uses one frame and bottom-center anchor', () => {
   assert.deepEqual(Array.from(character.LAYER_ORDER),['top','bottom','footwear']);
 });
 
-test('rendering emits ordinary aligned image layers with no SVG masks', () => {
-  Object.assign(state.buddy.appearance,{top:'tee-classic',bottom:'jeans-wide-leg',footwear:'sneakers-low-top'});
+test('clothing remains ordinary aligned PNG layers', () => {
+  Object.assign(state.buddy.appearance,{top:'tee-classic',bottom:'jeans-wide-leg',footwear:'sneakers-low-top',hairStyle:'none'});
   for (const [index,angle] of angles.entries()) {
     const markup=character.renderCharacter(state.buddy,{angle});
     assert.match(markup,new RegExp(`data-source-path="assets/buddy/turnaround/views/${slugs[index]}\\.png"`));
@@ -36,16 +36,26 @@ test('rendering emits ordinary aligned image layers with no SVG masks', () => {
     assert.match(markup,/data-character-layer="bottom"/);
     assert.match(markup,/data-character-layer="footwear"/);
     assert.match(markup,/data-anchor="bottom-center"/);
-    assert.doesNotMatch(markup,/<svg\b|<mask\b|layers-atlas\.png|\.webp/);
     assert.doesNotMatch(markup,/undefined|NaN/);
   }
 });
 
 test('new Buddy starts with only the authored body image', () => {
-  Object.assign(state.buddy.appearance,{top:'none',bottom:'none',footwear:'none'});
+  Object.assign(state.buddy.appearance,{top:'none',bottom:'none',footwear:'none',hairStyle:'none',bodyColor:'#F7FBFC',eyeColor:'#171923'});
   const markup=character.renderCharacter(state.buddy);
   assert.equal((markup.match(/<img\b/g)||[]).length,1);
   assert.match(markup,/data-character-layer="body"/);
+  assert.doesNotMatch(markup,/data-character-cosmetics=/);
+});
+
+test('hair and color customization use cosmetic overlays without replacing clothing PNGs', () => {
+  Object.assign(state.buddy.appearance,{top:'tee-classic',bottom:'none',footwear:'none',hairStyle:'swept',hairColor:'#7B3F00',eyeColor:'#315EDC'});
+  const markup=character.renderCharacter(state.buddy);
+  assert.equal((markup.match(/<img\b/g)||[]).length,2);
+  assert.match(markup,/data-character-layer="body"/);
+  assert.match(markup,/data-character-layer="top"/);
+  assert.match(markup,/data-character-cosmetics="over"/);
+  assert.match(markup,/layers-atlas\.png/);
 });
 
 test('all eight authored body PNG files exist', () => {
