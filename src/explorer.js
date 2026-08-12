@@ -61,6 +61,14 @@
     ctx.lineWidth = 2*px;
     ctx.beginPath(); ctx.arc(0, -7*px, 5*px, 0, Math.PI*2); ctx.fill(); ctx.stroke();
     ctx.fillRect(-5*px, -2*px, 10*px, 10*px); ctx.strokeRect(-5*px, -2*px, 10*px, 10*px);
+    if (appearance.top !== 'none') {
+      ctx.fillStyle = '#FFF7E8'; ctx.fillRect(-5*px, -2*px, 10*px, 5*px);
+      ctx.strokeRect(-5*px, -2*px, 10*px, 5*px);
+    }
+    if (appearance.bottom !== 'none') {
+      ctx.fillStyle = '#7899BD'; ctx.fillRect(-4*px, 3*px, 8*px, 5*px);
+      ctx.strokeRect(-4*px, 3*px, 8*px, 5*px);
+    }
     ctx.fillStyle = appearance.eyeColor;
     ctx.fillRect(-2.8*px, -9*px, 1.3*px, 4*px); ctx.fillRect(1.5*px, -9*px, 1.3*px, 4*px);
     if (appearance.hairStyle !== 'none') {
@@ -70,6 +78,9 @@
     const stride = state.player.walkFrame ? px : -px;
     ctx.strokeStyle = '#11131A'; ctx.lineWidth = 2*px;
     ctx.beginPath(); ctx.moveTo(-2*px, 8*px); ctx.lineTo(-3*px+stride, 12*px); ctx.moveTo(2*px, 8*px); ctx.lineTo(3*px-stride, 12*px); ctx.stroke();
+    if (appearance.footwear !== 'none') {
+      ctx.fillStyle='#FFF7E8'; ctx.fillRect((-5*px)+stride,11*px,5*px,2*px); ctx.fillRect(-stride,11*px,5*px,2*px);
+    }
     ctx.restore();
   }
 
@@ -90,13 +101,31 @@
 
     function drawMiniMap() {
       const ctx = miniMap.getContext('2d');
+      const left = 8;
+      const top = 8;
+      const width = miniMap.width - 16;
+      const height = miniMap.height - 16;
       ctx.clearRect(0, 0, miniMap.width, miniMap.height);
       ctx.fillStyle = '#111F38'; ctx.fillRect(0, 0, miniMap.width, miniMap.height);
-      ctx.strokeStyle = '#E4BD67'; ctx.lineWidth = 3; ctx.strokeRect(8, 8, miniMap.width-16, miniMap.height-16);
+      ctx.strokeStyle = '#E4BD67'; ctx.lineWidth = 2; ctx.strokeRect(left, top, width, height);
+
+      for (const object of ROOM_OBJECTS) {
+        const grid = object.grid;
+        const x = left + (grid.x / ROOM_GRID.cols) * width;
+        const y = top + (grid.y / ROOM_GRID.rows) * height;
+        const w = Math.max(3, (grid.w / ROOM_GRID.cols) * width);
+        const h = Math.max(3, (grid.h / ROOM_GRID.rows) * height);
+        ctx.fillStyle = object.id === 'desk' ? '#72A7FF' : object.id === 'bed' ? '#D79B72' : object.id === 'bookshelf' ? '#C69B69' : '#77C5D5';
+        ctx.globalAlpha = .78;
+        ctx.fillRect(x, y, w, h);
+        ctx.globalAlpha = 1;
+      }
+
       ctx.fillStyle = '#5CF29B';
       ctx.beginPath();
-      ctx.arc(8 + (state.player.displayX / ROOM_GRID.cols)*(miniMap.width-16), 8 + (state.player.displayY / ROOM_GRID.rows)*(miniMap.height-16), 5, 0, Math.PI*2);
+      ctx.arc(left + (state.player.displayX / ROOM_GRID.cols)*width, top + (state.player.displayY / ROOM_GRID.rows)*height, 4, 0, Math.PI*2);
       ctx.fill();
+      ctx.strokeStyle = '#09131F'; ctx.lineWidth = 1.5; ctx.stroke();
     }
 
     function draw() {
@@ -134,7 +163,7 @@
       ctx.fillStyle = '#705038'; ctx.fillRect(shelf.x*unit,shelf.y*unit,shelf.w*unit,shelf.h*unit); ctx.strokeRect(shelf.x*unit,shelf.y*unit,shelf.w*unit,shelf.h*unit);
       ctx.fillStyle = theme.rug; ctx.fillRect(6*unit,5*unit,4*unit,3*unit); ctx.strokeRect(6*unit,5*unit,4*unit,3*unit);
       ctx.fillStyle = '#24314B'; ctx.fillRect(7*unit,9*unit,2*unit,unit);
-      drawPixelBuddy(ctx,(state),(state.player.displayX+.5)*unit,(state.player.displayY+.55)*unit,unit);
+      drawPixelBuddy(ctx,state,(state.player.displayX+.5)*unit,(state.player.displayY+.55)*unit,unit);
       if (state.time === 'night') { ctx.fillStyle='rgba(15,31,67,.25)'; ctx.fillRect(0,0,width,height); }
       ctx.restore();
 
@@ -144,13 +173,8 @@
       drawMiniMap();
     }
 
-    function heldMove() {
-      return [...heldMoves.values()].at(-1) || null;
-    }
-
-    function scheduleFrame() {
-      if (!movementFrame) movementFrame = requestAnimationFrame(animateMovement);
-    }
+    function heldMove() { return [...heldMoves.values()].at(-1) || null; }
+    function scheduleFrame() { if (!movementFrame) movementFrame = requestAnimationFrame(animateMovement); }
 
     function animateMovement(now) {
       movementFrame = 0;

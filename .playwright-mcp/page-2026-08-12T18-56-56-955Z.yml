@@ -1,0 +1,51 @@
+- main [ref=f4e2]:
+  - region "Buddy game" [ref=f4e3]:
+    - generic [ref=f4e4]:
+      - generic [ref=f4e5]:
+        - button "Console Mode" [ref=f4e6] [cursor=pointer]
+        - generic [ref=f4e7]:
+          - strong [ref=f4e8]: Campus Buddy
+          - generic [ref=f4e9]: Fresh Daytime Dorm · Day
+      - generic [ref=f4e10]:
+        - time [ref=f4e11]: Wed, Aug 12
+        - time [ref=f4e12]: 11:56 AM
+      - button "Open Buddy quick chat" [ref=f4e13] [cursor=pointer]:
+        - img "Mika front view wearing classic tee, wide-leg jeans, low-top sneakers" [ref=f4e15]
+        - generic [ref=f4e17]:
+          - strong [ref=f4e18]: Mika
+          - generic [ref=f4e19]: Relaxing in the room
+    - toolbar "Home view controls" [ref=f4e20]:
+      - group "Switch Home view" [ref=f4e21]:
+        - button "Home" [ref=f4e22] [cursor=pointer]
+        - button "Explorer Mode" [ref=f4e23] [cursor=pointer]
+      - generic [ref=f4e24]: A close, composed view of the same room state.
+      - button "Demo tools" [ref=f4e25] [cursor=pointer]
+    - region "Home" [ref=f4e26]:
+      - generic [ref=f4e27]:
+        - img "Fresh Daytime Dorm Home" [ref=f4e28]:
+          - generic "window" [ref=f4e45]
+          - generic "bed" [ref=f4e50]
+          - generic "desk" [ref=f4e54]
+          - generic "bookshelf" [ref=f4e60]
+          - generic "rug" [ref=f4e67]
+          - generic [ref=f4e69]:
+            - generic [ref=f4e71]: HOME
+            - generic [ref=f4e72]: Relaxing in the room
+        - img "Mika front view wearing classic tee, wide-leg jeans, low-top sneakers" [ref=f4e74]
+      - button "Select Buddy" [ref=f4e76] [cursor=pointer]
+    - navigation "Game applications" [ref=f4e77]:
+      - button "▣ Agenda" [ref=f4e78] [cursor=pointer]:
+        - text: ▣
+        - generic [ref=f4e79]: Agenda
+      - button "▤ Journal" [ref=f4e80] [cursor=pointer]:
+        - text: ▤
+        - generic [ref=f4e81]: Journal
+      - button "☆ Collection" [ref=f4e82] [cursor=pointer]:
+        - text: ☆
+        - generic [ref=f4e83]: Collection
+      - button "♙ Customize" [ref=f4e84] [cursor=pointer]:
+        - text: ♙
+        - generic [ref=f4e85]: Customize
+      - button "▦ Computer" [ref=f4e86] [cursor=pointer]:
+        - text: ▦
+        - generic [ref=f4e87]: Computer

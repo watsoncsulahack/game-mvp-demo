@@ -4,9 +4,14 @@ import { loadBrowserScripts } from './helpers.mjs';
 
 const { CampusBuddyCore: core } = loadBrowserScripts(['src/state.js']);
 
-test('canonical state stores one appearance representation', () => {
+test('canonical state stores one appearance representation with no default clothing', () => {
   const state = core.createState();
-  assert.deepEqual(Object.keys(state.buddy.appearance).sort(), ['bodyColor','eyeColor','hairColor','hairStyle','outfit']);
+  assert.deepEqual(Object.keys(state.buddy.appearance).sort(), ['bodyColor','bottom','eyeColor','footwear','hairColor','hairStyle','top']);
+  assert.deepEqual(
+    { top:state.buddy.appearance.top, bottom:state.buddy.appearance.bottom, footwear:state.buddy.appearance.footwear },
+    { top:'none', bottom:'none', footwear:'none' }
+  );
+  assert.equal('wallet' in state, false);
   assert.equal('shell' in state.buddy, false);
   assert.equal('signal' in state.buddy, false);
 });

@@ -1,0 +1,102 @@
+- main [ref=f3e2]:
+  - region "Buddy onboarding" [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - link "Campus Buddy home" [ref=f3e6] [cursor=pointer]:
+          - /url: "#"
+          - strong [ref=f3e7]: Campus Buddy
+        - list "Onboarding progress" [ref=f3e8]:
+          - listitem [ref=f3e9]:
+            - generic [ref=f3e10]: "1"
+            - generic [ref=f3e11]: Campus ID
+          - listitem [ref=f3e12]:
+            - generic [ref=f3e13]: "2"
+            - generic [ref=f3e14]: Design Buddy
+          - listitem [ref=f3e15]:
+            - generic [ref=f3e16]: "3"
+            - generic [ref=f3e17]: Review
+      - generic [ref=f3e18]:
+        - complementary "Interactive Buddy artwork" [ref=f3e19]:
+          - generic "Rotate Buddy. Front view, 1 of 8. Drag horizontally or use Left and Right Arrow keys." [ref=f3e21]:
+            - generic:
+              - generic: Current look
+              - strong: Move-in casual
+              - generic: 3 layers · 8 views
+            - img "Mika front view wearing classic tee, wide-leg jeans, low-top sneakers" [ref=f3e23]
+            - generic [ref=f3e25]: ↔ Drag to rotate
+            - group "Buddy rotation controls" [ref=f3e26]:
+              - button "Rotate Buddy left" [ref=f3e27] [cursor=pointer]: ‹
+              - generic [ref=f3e28]: Front · 1/8
+              - button "Rotate Buddy right" [ref=f3e29] [cursor=pointer]: ›
+        - generic [ref=f3e31]:
+          - generic [ref=f3e32]:
+            - text: Step 2 of 3 · Design Buddy
+            - heading "Build a look." [level=1] [ref=f3e33]
+            - paragraph [ref=f3e34]: Every item is an independent sprite layer aligned across all eight views.
+          - generic [ref=f3e35]:
+            - generic [ref=f3e36]:
+              - generic [ref=f3e37]:
+                - text: Buddy name
+                - textbox "Buddy name" [ref=f3e38]: Mika
+              - group "Starting disposition" [ref=f3e39]:
+                - generic [ref=f3e41]:
+                  - button "Curious" [ref=f3e42] [cursor=pointer]
+                  - button "Steady" [ref=f3e43] [cursor=pointer]
+                  - button "Playful" [ref=f3e44] [cursor=pointer]
+                  - button "Bold" [ref=f3e45] [cursor=pointer]
+                  - button "Reflective" [ref=f3e46] [cursor=pointer]
+                - generic [ref=f3e47]: Curious Buddies ask follow-up questions and notice patterns.
+              - group "Layered wardrobe" [ref=f3e48]:
+                - generic [ref=f3e50]:
+                  - generic [ref=f3e51]:
+                    - strong [ref=f3e52]: Mix a move-in outfit
+                    - generic [ref=f3e53]: Shared frame · bottom-center anchor
+                  - group "Outfit presets" [ref=f3e54]:
+                    - button "Move-in look" [ref=f3e55] [cursor=pointer]
+                    - button "Clear layers" [ref=f3e56] [cursor=pointer]
+                - generic [ref=f3e57]:
+                  - generic [ref=f3e58]:
+                    - strong [ref=f3e59]: Top
+                    - generic [ref=f3e60]: Classic tee
+                  - generic [ref=f3e61]:
+                    - button "None Base Buddy layer only." [ref=f3e62] [cursor=pointer]:
+                      - generic [ref=f3e63]: None
+                      - generic [ref=f3e65]:
+                        - strong [ref=f3e66]: None
+                        - generic [ref=f3e67]: Base Buddy layer only.
+                    - button "Classic tee Soft cream tee with navy trim." [ref=f3e68] [cursor=pointer]:
+                      - generic [ref=f3e71]:
+                        - strong [ref=f3e72]: Classic tee
+                        - generic [ref=f3e73]: Soft cream tee with navy trim.
+                - generic [ref=f3e74]:
+                  - generic [ref=f3e75]:
+                    - strong [ref=f3e76]: Bottom
+                    - generic [ref=f3e77]: Wide-leg jeans
+                  - generic [ref=f3e78]:
+                    - button "None Base Buddy layer only." [ref=f3e79] [cursor=pointer]:
+                      - generic [ref=f3e80]: None
+                      - generic [ref=f3e82]:
+                        - strong [ref=f3e83]: None
+                        - generic [ref=f3e84]: Base Buddy layer only.
+                    - button "Wide-leg jeans Relaxed denim with stitched pockets." [ref=f3e85] [cursor=pointer]:
+                      - generic [ref=f3e88]:
+                        - strong [ref=f3e89]: Wide-leg jeans
+                        - generic [ref=f3e90]: Relaxed denim with stitched pockets.
+                - generic [ref=f3e91]:
+                  - generic [ref=f3e92]:
+                    - strong [ref=f3e93]: Footwear
+                    - generic [ref=f3e94]: Low-top sneakers
+                  - generic [ref=f3e95]:
+                    - button "None Base Buddy layer only." [ref=f3e96] [cursor=pointer]:
+                      - generic [ref=f3e97]: None
+                      - generic [ref=f3e99]:
+                        - strong [ref=f3e100]: None
+                        - generic [ref=f3e101]: Base Buddy layer only.
+                    - button "Low-top sneakers Everyday cream campus sneakers." [ref=f3e102] [cursor=pointer]:
+                      - generic [ref=f3e105]:
+                        - strong [ref=f3e106]: Low-top sneakers
+                        - generic [ref=f3e107]: Everyday cream campus sneakers.
+              - alert [ref=f3e108]
+            - generic [ref=f3e109]:
+              - button "Back" [ref=f3e110] [cursor=pointer]
+              - button "Continue to review" [ref=f3e111] [cursor=pointer]

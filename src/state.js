@@ -6,7 +6,9 @@
     eyeColor: '#171923',
     hairStyle: 'none',
     hairColor: '#26354D',
-    outfit: 'none'
+    top: 'none',
+    bottom: 'none',
+    footwear: 'none'
   });
 
   const DISPOSITIONS = Object.freeze({
@@ -18,7 +20,7 @@
   });
 
   function createState() {
-    return {
+    const state = {
       onboardingStep: 1,
       email: '',
       campus: 'University',
@@ -26,7 +28,6 @@
       room: 'sunlit',
       time: 'day',
       view: 'room',
-      wallet: 60,
       buddy: {
         name: 'Mika',
         disposition: 'curious',
@@ -45,6 +46,8 @@
       previewAngle: 0,
       consoleTool: null
     };
+    if (typeof window !== 'undefined') window.CampusBuddyState = state;
+    return state;
   }
 
   function hashText(text) {

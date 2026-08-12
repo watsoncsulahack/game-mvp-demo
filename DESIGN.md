@@ -21,11 +21,11 @@ The three-step flow is **Campus ID**, **Design Buddy**, then **Review**.
 
 ## Buddy character
 
-The supplied eight-view turnaround is the source of truth for anatomy and proportions. Runtime code must not reconstruct the body from hand-authored SVG path coordinates. The renderer composes aligned sprite-mask layers for the canonical body, line art, eyes, hair, and clothing.
+The supplied eight-view turnaround is the source of truth for anatomy and proportions. Runtime code must not reconstruct the body from hand-authored SVG path coordinates. The renderer composes ordinary transparent image layers for the canonical body, top, bottom, and footwear on one `256 × 640` frame with a bottom-center anchor.
 
-Body color, eye color, hair style/color, clothing, and disposition remain onboarding customizations. Every selectable visual layer must have a valid representation for all eight turnaround views before it is exposed in the UI.
+Clothing and disposition are the demo-ready onboarding customizations. Every selectable visual layer must have a valid representation for all eight turnaround views before it is exposed in the UI. Body, eye, hair, and accessory customization can return when aligned assets exist for the complete turnaround.
 
-The current hair and clothing layers are starter assets that follow the eight-view contract. Future production model-sheet assets can replace those masks without changing the renderer or onboarding interaction model.
+Future production assets may be stored as individual images or packed into a sprite sheet for delivery, but authoring metadata must preserve the shared frame, layer order, and anchor contract.
 
 ## Home and Explorer
 
