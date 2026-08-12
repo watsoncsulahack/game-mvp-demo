@@ -73,3 +73,7 @@
 .console-wallet-rows>span b{color:#b8c2cf}.console-wallet-rows>span strong{white-space:nowrap}
 #roomScene [aria-label="desk"]{cursor:pointer}
 @media(max-width:600px){.panel-turnaround{grid-template-columns:1fr}.panel-turnaround-stage{height:230px}}
+
+/* Keep console tool shortcuts available while a tool is open. */
+.console-actions{z-index:12!important}
+.console-tool-screen{padding:24px 24px 76px!important;z-index:8!important}
