@@ -15,7 +15,8 @@
     ['campus-bookstore-parity', 'styles/campus-bookstore-parity.css'],
     ['campus-bookstore-wallet-checkout', 'styles/campus-bookstore-wallet-checkout.css'],
     ['campus-ui-polish', 'styles/campus-ui-polish.css'],
-    ['campus-ui-polish-v2', 'styles/campus-ui-polish-v2.css']
+    ['campus-ui-polish-v2', 'styles/campus-ui-polish-v2.css'],
+    ['campus-drawer-grid-fix', 'styles/campus-drawer-grid-fix.css']
   ];
 
   styles.forEach(([name, href]) => {

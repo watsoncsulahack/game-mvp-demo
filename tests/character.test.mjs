@@ -27,6 +27,7 @@ test('character manifest uses one frame and bottom-center anchor', () => {
 });
 
 test('rendering emits ordinary aligned image layers with no SVG masks', () => {
+  Object.assign(state.buddy.appearance,{top:'tee-classic',bottom:'jeans-wide-leg',footwear:'sneakers-low-top'});
   for (const [index,angle] of angles.entries()) {
     const markup=character.renderCharacter(state.buddy,{angle});
     assert.match(markup,new RegExp(`data-source-path="assets/buddy/turnaround/views/${slugs[index]}\\.png"`));
@@ -40,7 +41,7 @@ test('rendering emits ordinary aligned image layers with no SVG masks', () => {
   }
 });
 
-test('clearing wardrobe layers leaves only the authored body image', () => {
+test('new Buddy starts with only the authored body image', () => {
   Object.assign(state.buddy.appearance,{top:'none',bottom:'none',footwear:'none'});
   const markup=character.renderCharacter(state.buddy);
   assert.equal((markup.match(/<img\b/g)||[]).length,1);

@@ -8,11 +8,18 @@ const context = loadBrowserScripts(['src/state.js','src/character.js']);
 const state = context.CampusBuddyCore.createState();
 const character = context.CampusBuddyCharacter;
 
-test('move-in look is three independently selectable garment layers', () => {
+test('new Buddy starts with no clothing layers selected', () => {
   assert.deepEqual(
     Object.fromEntries(Object.entries(character.equippedLayers(state.buddy.appearance))),
-    {top:'tee-classic',bottom:'jeans-wide-leg',footwear:'sneakers-low-top'}
+    {top:'none',bottom:'none',footwear:'none'}
   );
+  const markup=character.renderCharacter(state.buddy);
+  assert.equal((markup.match(/<img\b/g)||[]).length,1);
+  assert.match(markup,/data-character-layer="body"/);
+});
+
+test('move-in look remains three independently selectable garment layers', () => {
+  Object.assign(state.buddy.appearance,{top:'tee-classic',bottom:'jeans-wide-leg',footwear:'sneakers-low-top'});
   const markup=character.renderCharacter(state.buddy);
   const body=markup.indexOf('data-character-layer="body"');
   const top=markup.indexOf('data-character-layer="top"');
