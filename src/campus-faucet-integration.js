@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const version = '20260812-6';
+  const version = '20260812-7';
   const styles = [
     ['campus-currencies', 'styles/campus-currencies.css'],
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
@@ -46,4 +46,5 @@
   loadScript('data-campus-app-runtime', 'src/campus-app-runtime.js');
   loadScript('data-buddy-demo-runtime', 'src/buddy-demo-runtime.js');
   loadScript('data-demo-refinement', 'src/demo-refinement.js');
+  loadScript('data-demo-refinement-stability', 'src/demo-refinement-stability.js');
 })();
