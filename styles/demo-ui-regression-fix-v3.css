@@ -24,6 +24,9 @@
 .cb-collectible-badge,.cb-modal-collectible>span:first-child,.cb-info-symbol{position:relative!important;border:0!important;outline:0!important;box-shadow:none!important;clip-path:polygon(50% 0,93.301% 25%,93.301% 75%,50% 100%,6.699% 75%,6.699% 25%)!important;background:linear-gradient(145deg,#ff7a00 0%,#ff6400 55%,#ef4300 100%)!important;color:transparent!important;font-size:0!important;overflow:hidden!important}
 .cb-collectible-badge::before,.cb-modal-collectible>span:first-child::before,.cb-info-symbol::before{content:none!important;display:none!important}
 .cb-collectible-badge::after,.cb-modal-collectible>span:first-child::after,.cb-info-symbol::after{content:""!important;position:absolute!important;top:24%!important;right:24%!important;width:11%!important;height:29%!important;border-radius:999px!important;background:#fff!important;box-shadow:none!important;transform:none!important}
+/* Product-card gemstone keeps the source Bookstore placement. */
+.cb-product-card>.cb-collectible-badge{position:absolute!important;z-index:4!important;top:13px!important;right:13px!important;left:auto!important}
+.cb-product-grid.list-view .cb-product-card>.cb-collectible-badge{left:145px!important;right:auto!important}
 
 /* Placeholder mint control for collectible items during checkout. */
 .cb-checkout-items>div:has(.cb-mint-placeholder){grid-template-columns:68px minmax(0,1fr) auto!important}

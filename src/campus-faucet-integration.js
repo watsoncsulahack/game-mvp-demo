@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const version = '20260812-14';
+  const version = '20260812-15';
   const styles = [
     ['campus-currencies', 'styles/campus-currencies.css'],
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
