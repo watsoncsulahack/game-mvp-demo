@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const version = '20260812-10';
+  const version = '20260812-11';
   const styles = [
     ['campus-currencies', 'styles/campus-currencies.css'],
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
@@ -44,7 +44,7 @@
   loadScript('data-campus-bookstore-v1', 'src/campus-bookstore-integration.js');
   loadScript('data-campus-bookstore-selection', 'src/campus-bookstore-selection.js');
   loadScript('data-campus-bookstore-parity', 'src/campus-bookstore-parity.js');
-  loadScript('data-demo-bookstore-preflight', 'src/demo-bookstore-preflight.js');
+  loadScript('data-demo-bookstore-preflight-v2', 'src/demo-bookstore-preflight-v2.js');
   loadScript('data-campus-bookstore-wallet-checkout', 'src/campus-bookstore-wallet-checkout.js');
   loadScript('data-campus-faucet-v4', 'src/campus-faucet-integration-v4.js');
   loadScript('data-campus-app-runtime', 'src/campus-app-runtime.js');
