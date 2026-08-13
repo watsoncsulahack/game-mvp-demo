@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const version = '20260812-8';
+  const version = '20260812-9';
   const styles = [
     ['campus-currencies', 'styles/campus-currencies.css'],
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
@@ -17,7 +17,8 @@
     ['campus-app-runtime', 'styles/campus-app-runtime.css'],
     ['buddy-demo-runtime', 'styles/buddy-demo-runtime.css'],
     ['demo-refinement', 'styles/demo-refinement.css'],
-    ['demo-regression-fix', 'styles/demo-regression-fix.css']
+    ['demo-regression-fix', 'styles/demo-regression-fix.css'],
+    ['demo-regression-fix-v2', 'styles/demo-regression-fix-v2.css']
   ];
 
   styles.forEach(([name, href]) => {
