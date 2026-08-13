@@ -1,0 +1,46 @@
+/* Regression guard: preserve the source Bookstore UI and use one wardrobe picker. */
+
+/* Once the image dropdown is present, it replaces the old side-by-side selection cards. */
+.wardrobe-options[data-demo-picker-only="1"] > :not(.demo-wardrobe-picker){display:none!important}
+.wardrobe-options[data-demo-picker-only="1"]{display:block!important}
+.demo-wardrobe-picker{margin:0!important}
+
+/* The syllabus list belongs to the Buddy assistant, not a second storefront section. */
+.demo-course-materials[hidden],.demo-course-materials{display:none!important}
+
+/* At the embedded computer size, retain the original three-card storefront rhythm. */
+@media (min-width:821px) and (max-width:1050px){
+  .cb-product-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:18px!important}
+  .cb-catalog-shell.filters-open .cb-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .cb-product-card-body{padding:15px!important}
+  .cb-product-name{font-size:17px!important}
+  .cb-product-description{font-size:12px!important}
+  .cb-add-button{font-size:12px!important}
+}
+
+/* Keep the original stock/like footer visible. */
+.cb-product-footer{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;padding-top:3px!important;visibility:visible!important;opacity:1!important}
+.cb-stock{display:inline!important;visibility:visible!important;opacity:1!important}
+.cb-like-button{display:inline-flex!important;visibility:visible!important;opacity:1!important}
+
+/* Quantity control: arrows at rest; fast red minus / green plus feedback only after a press. */
+.cb-stepper.cb-parity-arrow-stepper{width:82px!important;min-width:82px!important;max-width:82px!important;height:42px!important;grid-template-columns:27px 28px 27px!important}
+.cb-parity-step{width:27px!important;height:42px!important;padding:0!important}
+.cb-parity-step svg{width:22px!important;height:26px!important}
+.cb-parity-symbol{opacity:0!important;transition:opacity .08s ease,stroke .08s ease!important}
+.cb-parity-arrow{transition:stroke .08s ease,stroke-width .08s ease!important}
+.cb-parity-arrow-stepper.is-increasing .cb-parity-step-up{color:var(--cb-success)!important}
+.cb-parity-arrow-stepper.is-increasing .cb-parity-step-up .cb-parity-symbol{opacity:1!important}
+.cb-parity-arrow-stepper.is-decreasing .cb-parity-step-down{color:var(--cb-danger)!important}
+.cb-parity-arrow-stepper.is-decreasing .cb-parity-step-down .cb-parity-symbol{opacity:1!important}
+.cb-parity-arrow-stepper output{transform:none!important}
+
+/* Assistant-added syllabus items should not destroy the normal cart drawer geometry. */
+.demo-course-cart-native{gap:0!important;padding:0!important;border-top:0!important}
+.demo-course-cart-native .demo-course-cart-head{display:none!important}
+.demo-course-cart-native article{margin:0 18px;padding:14px 0!important;border:0!important;border-bottom:1px solid var(--cb-line)!important;border-radius:0!important;background:transparent!important;grid-template-columns:58px minmax(0,1fr) auto!important}
+.demo-course-cart-native .demo-course-cart-art{width:58px!important;height:58px!important}
+.demo-course-cart-native .demo-course-cart-summary{margin:0 18px;padding:16px 0 20px!important;border-top:0!important}
+.demo-course-cart-native .demo-course-cart-summary button{min-height:44px!important;border-radius:999px!important;background:var(--cb-text)!important;color:#fff!important;font-size:12px!important;font-weight:850!important}
+.cb-cart-summary{display:grid!important;visibility:visible!important;opacity:1!important}
+.cb-cart-summary [data-cb-checkout]{display:block!important;visibility:visible!important;opacity:1!important}

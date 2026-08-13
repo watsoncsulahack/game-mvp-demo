@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const version = '20260812-7';
+  const version = '20260812-8';
   const styles = [
     ['campus-currencies', 'styles/campus-currencies.css'],
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
@@ -16,7 +16,8 @@
     ['campus-bookstore-wallet-checkout', 'styles/campus-bookstore-wallet-checkout.css'],
     ['campus-app-runtime', 'styles/campus-app-runtime.css'],
     ['buddy-demo-runtime', 'styles/buddy-demo-runtime.css'],
-    ['demo-refinement', 'styles/demo-refinement.css']
+    ['demo-refinement', 'styles/demo-refinement.css'],
+    ['demo-regression-fix', 'styles/demo-regression-fix.css']
   ];
 
   styles.forEach(([name, href]) => {
@@ -47,4 +48,5 @@
   loadScript('data-buddy-demo-runtime', 'src/buddy-demo-runtime.js');
   loadScript('data-demo-refinement', 'src/demo-refinement.js');
   loadScript('data-demo-refinement-stability', 'src/demo-refinement-stability.js');
+  loadScript('data-demo-regression-fix', 'src/demo-regression-fix.js');
 })();
