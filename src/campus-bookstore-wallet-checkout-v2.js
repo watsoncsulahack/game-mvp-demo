@@ -23,12 +23,15 @@
   const parseMoney = value => Number(String(value || '').replace(/[^0-9.-]/g, '')) || 0;
   const esc = value => String(value).replace(/[&<>"']/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[character]);
 
-  function root() {
-    return document.querySelector('[data-bookstore-ui-v1]');
-  }
+  function root() { return document.querySelector('[data-bookstore-ui-v1]'); }
+  function session() { return window.CampusUnifiedApps?.getSession?.() || null; }
 
-  function session() {
-    return window.CampusUnifiedApps?.getSession?.() || null;
+  function setText(element, value) {
+    if (!element) return false;
+    const next = String(value);
+    if (element.textContent === next) return false;
+    element.textContent = next;
+    return true;
   }
 
   function ensureBalances(value = session()) {
@@ -131,23 +134,18 @@
     });
   }
 
-  function currencyLabel(code, amount) {
-    return code === 'BEACH' ? beach(amount) : money(amount);
-  }
+  function currencyLabel(code, amount) { return code === 'BEACH' ? beach(amount) : money(amount); }
 
   function walletBalanceMarkup(value) {
-    return `<div class="cb-wallet-balance-card"><span>USD balance</span><strong>${money(value.balances.USD)}</strong><small>US Dollar</small></div>
-      <div class="cb-wallet-balance-card"><span>BEACH balance</span><strong>${beach(value.balances.BEACH)}</strong><small>1 BEACH = $1.00</small></div>`;
+    return `<div class="cb-wallet-balance-card"><span>USD balance</span><strong>${money(value.balances.USD)}</strong><small>US Dollar</small></div><div class="cb-wallet-balance-card"><span>BEACH balance</span><strong>${beach(value.balances.BEACH)}</strong><small>1 BEACH = $1.00</small></div>`;
   }
 
   function paymentBreakdown(scope) {
     const totals = summaryValues(scope);
     const allocations = { USD:0, BEACH:0 };
     const add = (code, usd) => { allocations[code] = Math.max(0, allocations[code] + Number(usd || 0)); };
-
-    if (!payment.advanced) {
-      add(payment.basicCurrency, totals.total);
-    } else if (payment.allocationMode === 'split') {
+    if (!payment.advanced) add(payment.basicCurrency, totals.total);
+    else if (payment.allocationMode === 'split') {
       const same = payment.currencyA === payment.currencyB;
       const percentA = same ? 100 : Math.max(0, Math.min(100, Number(payment.splitPercent) || 0));
       add(payment.currencyA, totals.total * percentA / 100);
@@ -159,15 +157,11 @@
       items.forEach(item => add(payment.itemCurrencies.get(item.key) || payment.basicCurrency, item.lineTotal * discountFactor));
       add(payment.basicCurrency, totals.shipping + totals.tax + totals.fee);
     }
-
-    return Object.entries(allocations)
-      .filter(([,usd]) => usd > 0.000001)
-      .map(([code,usd]) => ({ code, usd:Math.round(usd * 100) / 100, units:Math.round((usd / RATE) * 100) / 100 }));
+    return Object.entries(allocations).filter(([,usd]) => usd > .000001).map(([code,usd]) => ({ code, usd:Math.round(usd*100)/100, units:Math.round((usd/RATE)*100)/100 }));
   }
 
   function allocationSummary(scope) {
-    const parts = paymentBreakdown(scope).map(item => `${currencyLabel(item.code, item.units)} from ${item.code}`);
-    return parts.join(' + ') || 'No payment allocation';
+    return paymentBreakdown(scope).map(item => `${currencyLabel(item.code,item.units)} from ${item.code}`).join(' + ') || 'No payment allocation';
   }
 
   function splitPanelMarkup(total) {
@@ -176,46 +170,29 @@
     const amountA = total * percentA / 100;
     const amountB = total * percentB / 100;
     const options = selected => `<option value="USD" ${selected === 'USD' ? 'selected' : ''}>US Dollar (USD)</option><option value="BEACH" ${selected === 'BEACH' ? 'selected' : ''}>BEACH</option>`;
-    return `<div class="cb-currency-split-editor">
-      <div class="cb-currency-pair"><select data-cb-pay-a>${options(payment.currencyA)}</select><span>+</span><select data-cb-pay-b>${options(payment.currencyB)}</select></div>
-      <div class="cb-split-labels"><span>${payment.currencyA} ${percentA}%</span><span>${payment.currencyB} ${percentB}%</span></div>
-      <input type="range" min="0" max="100" step="5" value="${percentA}" data-cb-pay-split ${payment.currencyA === payment.currencyB ? 'disabled' : ''}>
-      <div class="cb-split-result"><div><span>${payment.currencyA}</span><strong>${currencyLabel(payment.currencyA, amountA)}</strong></div><div><span>${payment.currencyB}</span><strong>${currencyLabel(payment.currencyB, amountB)}</strong></div></div>
-    </div>`;
+    return `<div class="cb-currency-split-editor"><div class="cb-currency-pair"><select data-cb-pay-a>${options(payment.currencyA)}</select><span>+</span><select data-cb-pay-b>${options(payment.currencyB)}</select></div><div class="cb-split-labels"><span>${payment.currencyA} ${percentA}%</span><span>${payment.currencyB} ${percentB}%</span></div><input type="range" min="0" max="100" step="1" value="${percentA}" data-cb-pay-split ${payment.currencyA === payment.currencyB ? 'disabled' : ''}><div class="cb-split-result"><div><span>${payment.currencyA}</span><strong>${currencyLabel(payment.currencyA,amountA)}</strong></div><div><span>${payment.currencyB}</span><strong>${currencyLabel(payment.currencyB,amountB)}</strong></div></div></div>`;
   }
 
   function perItemMarkup(scope) {
     const options = selected => `<option value="USD" ${selected === 'USD' ? 'selected' : ''}>USD</option><option value="BEACH" ${selected === 'BEACH' ? 'selected' : ''}>BEACH</option>`;
-    const items = checkoutItems(scope);
-    return `<div class="cb-per-item-allocation">${items.map(item => {
+    return `<div class="cb-per-item-allocation">${checkoutItems(scope).map(item => {
       const selected = payment.itemCurrencies.get(item.key) || payment.basicCurrency;
-      payment.itemCurrencies.set(item.key, selected);
-      return `<div class="cb-per-item-currency-row"><span><strong>${esc(item.name)}</strong><small>${item.quantity} item${item.quantity === 1 ? '' : 's'} · ${money(item.lineTotal)}</small></span><select data-cb-pay-item="${esc(item.key)}">${options(selected)}</select></div>`;
+      payment.itemCurrencies.set(item.key,selected);
+      return `<div class="cb-per-item-currency-row"><span><strong>${esc(item.name)}</strong><small>${item.quantity} item${item.quantity===1?'':'s'} · ${money(item.lineTotal)}</small></span><select data-cb-pay-item="${esc(item.key)}">${options(selected)}</select></div>`;
     }).join('')}</div>`;
   }
 
-  function paymentSignature(scope, value) {
+  function paymentSignature(scope,value) {
     const totals = summaryValues(scope);
     const items = checkoutItems(scope).map(item => `${item.key}:${item.quantity}:${item.lineTotal}`).join('|');
     const itemCurrencies = [...payment.itemCurrencies.entries()].sort().map(([key,code]) => `${key}:${code}`).join('|');
-    return [payment.advanced, payment.basicCurrency, payment.allocationMode, payment.currencyA, payment.currencyB, payment.splitPercent, itemCurrencies, Number(value.balances.USD).toFixed(2), Number(value.balances.BEACH).toFixed(2), totals.total.toFixed(2), items].join('::');
+    return [payment.advanced,payment.basicCurrency,payment.allocationMode,payment.currencyA,payment.currencyB,payment.splitPercent,itemCurrencies,Number(value.balances.USD).toFixed(2),Number(value.balances.BEACH).toFixed(2),totals.total.toFixed(2),items].join('::');
   }
 
-  function paymentCardMarkup(scope, value, signature) {
+  function paymentCardMarkup(scope,value,signature) {
     const totals = summaryValues(scope);
-    const options = selected => `<option value="USD" ${selected === 'USD' ? 'selected' : ''}>US Dollar (USD)</option><option value="BEACH" ${selected === 'BEACH' ? 'selected' : ''}>BEACH</option>`;
-    return `<section class="cb-checkout-card cb-payment-card" data-cb-payment-card data-cb-payment-signature="${esc(signature)}">
-      <div class="cb-checkout-card-head"><div><h2>Payment</h2><p>Use the Campus Wallet linked to this Buddy account.</p></div><span>1 BEACH = $1.00</span></div>
-      <div class="cb-checkout-option-list">
-        <label class="cb-checkout-option"><span><b>Payment currency</b><small>Choose a single currency for the order.</small></span><select data-cb-pay-basic>${options(payment.basicCurrency)}</select></label>
-        <div class="cb-wallet-balances">${walletBalanceMarkup(value)}</div>
-        <label class="cb-checkout-option cb-advanced-toggle-row"><span><b>Advanced payment <em>Optional</em></b><small>Split the order or choose a currency per item.</small></span><span class="cb-checkout-switch"><input type="checkbox" data-cb-pay-advanced ${payment.advanced ? 'checked' : ''}><i aria-hidden="true"></i></span></label>
-      </div>
-      ${payment.advanced ? `<div class="cb-checkout-advanced-panel">
-        <div class="cb-allocation-mode"><label><input type="radio" name="cbAllocation" value="split" data-cb-pay-mode ${payment.allocationMode === 'split' ? 'checked' : ''}><span>Split order</span></label><label><input type="radio" name="cbAllocation" value="item" data-cb-pay-mode ${payment.allocationMode === 'item' ? 'checked' : ''}><span>Per item</span></label></div>
-        ${payment.allocationMode === 'split' ? splitPanelMarkup(totals.total) : perItemMarkup(scope)}
-      </div>` : ''}
-    </section>`;
+    const options = selected => `<option value="USD" ${selected==='USD'?'selected':''}>US Dollar (USD)</option><option value="BEACH" ${selected==='BEACH'?'selected':''}>BEACH</option>`;
+    return `<section class="cb-checkout-card cb-payment-card" data-cb-payment-card data-cb-payment-signature="${esc(signature)}"><div class="cb-checkout-card-head"><div><h2>Payment</h2><p>Use the Campus Wallet linked to this Buddy account.</p></div><span>1 BEACH = $1.00</span></div><div class="cb-checkout-option-list"><label class="cb-checkout-option"><span><b>Payment currency</b><small>Choose a single currency for the order.</small></span><select data-cb-pay-basic>${options(payment.basicCurrency)}</select></label><div class="cb-wallet-balances">${walletBalanceMarkup(value)}</div><label class="cb-checkout-option cb-advanced-toggle-row"><span><b>Advanced payment <em>Optional</em></b><small>Split the order or choose a currency per item.</small></span><span class="cb-checkout-switch"><input type="checkbox" data-cb-pay-advanced ${payment.advanced?'checked':''}><i aria-hidden="true"></i></span></label></div>${payment.advanced?`<div class="cb-checkout-advanced-panel"><div class="cb-allocation-mode"><label><input type="radio" name="cbAllocation" value="split" data-cb-pay-mode ${payment.allocationMode==='split'?'checked':''}><span>Split Payment</span></label><label><input type="radio" name="cbAllocation" value="item" data-cb-pay-mode ${payment.allocationMode==='item'?'checked':''}><span>Per item</span></label></div>${payment.allocationMode==='split'?splitPanelMarkup(totals.total):perItemMarkup(scope)}</div>`:''}</section>`;
   }
 
   function enhanceCheckout(scope) {
@@ -223,40 +200,31 @@
     if (!checkout) return;
     const value = ensureBalances();
     if (!value) return;
-
     const column = checkout.querySelector('.cb-checkout-column');
     if (!column) return;
     const existing = column.querySelector('[data-cb-payment-card]');
-    const signature = paymentSignature(scope, value);
-    if (!existing) column.insertAdjacentHTML('beforeend', paymentCardMarkup(scope, value, signature));
-    else if (existing.dataset.cbPaymentSignature !== signature) existing.outerHTML = paymentCardMarkup(scope, value, signature);
-
+    const signature = paymentSignature(scope,value);
+    if (!existing) column.insertAdjacentHTML('beforeend',paymentCardMarkup(scope,value,signature));
+    else if (existing.dataset.cbPaymentSignature !== signature) existing.outerHTML = paymentCardMarkup(scope,value,signature);
     const summary = checkout.querySelector('.cb-checkout-summary');
-    if (summary) {
-      let composition = summary.querySelector('[data-cb-payment-composition]');
-      if (!composition) {
-        composition = document.createElement('div');
-        composition.className = 'cb-payment-composition';
-        composition.dataset.cbPaymentComposition = '';
-        const button = summary.querySelector('.cb-place-order');
-        button?.insertAdjacentElement('beforebegin', composition);
-      }
-      if (composition) {
-        const nextComposition = `<strong>Campus Wallet payment</strong><span>${esc(allocationSummary(scope))}</span>`;
-        if (composition.innerHTML !== nextComposition) composition.innerHTML = nextComposition;
-      }
-      const button = summary.querySelector('.cb-place-order');
-      const total = summaryValues(scope).total;
-      if (button) {
-        const label = `Pay ${money(total)} · Complete purchase`;
-        if (button.textContent !== label) button.textContent = label;
-        const aria = `Pay ${money(total)} and complete purchase`;
-        if (button.getAttribute('aria-label') !== aria) button.setAttribute('aria-label', aria);
-      }
-      const note = summary.querySelector(':scope > p');
-      const noteText = 'Demo purchase · funds are deducted from the linked Campus Wallet.';
-      if (note && note.textContent !== noteText) note.textContent = noteText;
+    if (!summary) return;
+    let composition = summary.querySelector('[data-cb-payment-composition]');
+    if (!composition) {
+      composition = document.createElement('div');
+      composition.className = 'cb-payment-composition';
+      composition.dataset.cbPaymentComposition = '';
+      summary.querySelector('.cb-place-order')?.insertAdjacentElement('beforebegin',composition);
     }
+    if (composition) composition.innerHTML = `<strong>Campus Wallet payment</strong><span>${esc(allocationSummary(scope))}</span>`;
+    const button = summary.querySelector('.cb-place-order');
+    const total = summaryValues(scope).total;
+    if (button) {
+      setText(button,`Pay ${money(total)} · Complete purchase`);
+      const aria = `Pay ${money(total)} and complete purchase`;
+      if (button.getAttribute('aria-label') !== aria) button.setAttribute('aria-label',aria);
+    }
+    const note = summary.querySelector(':scope > p');
+    if (note) setText(note,'Demo purchase · funds are deducted from the linked Campus Wallet.');
   }
 
   function updatePaymentOnly() {
@@ -267,37 +235,43 @@
     restoreScroll();
   }
 
+  function updateSplitPreview(input) {
+    const scope = root();
+    const editor = input.closest('.cb-currency-split-editor');
+    if (!scope || !editor) return;
+    const total = summaryValues(scope).total;
+    const same = payment.currencyA === payment.currencyB;
+    const percentA = same ? 100 : Math.max(0,Math.min(100,payment.splitPercent));
+    const percentB = 100-percentA;
+    const labels = editor.querySelectorAll('.cb-split-labels span');
+    setText(labels[0],`${payment.currencyA} ${percentA}%`);
+    setText(labels[1],`${payment.currencyB} ${percentB}%`);
+    const result = editor.querySelectorAll('.cb-split-result>div');
+    if (result[0]) { setText(result[0].querySelector('span'),payment.currencyA); setText(result[0].querySelector('strong'),currencyLabel(payment.currencyA,total*percentA/100)); }
+    if (result[1]) { setText(result[1].querySelector('span'),payment.currencyB); setText(result[1].querySelector('strong'),currencyLabel(payment.currencyB,total*percentB/100)); }
+    const composition = scope.querySelector('[data-cb-payment-composition] span');
+    if (composition) setText(composition,allocationSummary(scope));
+    const card = input.closest('[data-cb-payment-card]');
+    const value = ensureBalances();
+    if (card && value) card.dataset.cbPaymentSignature = paymentSignature(scope,value);
+  }
+
   function commitWalletPayment(scope) {
     if (committing) return false;
     const value = ensureBalances();
     if (!value) return false;
     const breakdown = paymentBreakdown(scope);
-    const unavailable = breakdown.find(item => item.units > Number(value.balances[item.code] || 0) + 0.000001);
-    if (unavailable) {
-      toast(`Insufficient ${unavailable.code} balance. Choose another payment allocation or swap funds in Campus Wallet.`);
-      return false;
-    }
-
+    const unavailable = breakdown.find(item => item.units > Number(value.balances[item.code] || 0) + .000001);
+    if (unavailable) { toast(`Insufficient ${unavailable.code} balance. Choose another payment allocation or swap funds in Campus Wallet.`); return false; }
     committing = true;
     const total = summaryValues(scope).total;
     const now = Date.now();
     const at = new Date(now).toLocaleString();
-    breakdown.forEach((item, index) => {
-      value.balances[item.code] = Math.max(0, Math.round((Number(value.balances[item.code]) - item.units) * 100) / 100);
-      value.transactions.unshift({
-        id:`BOOK-${now.toString(36).toUpperCase()}-${index + 1}`,
-        amount:-item.units,
-        currency:item.code,
-        label:'Campus Bookstore purchase',
-        at,
-        createdAt:now + index,
-        kind:'purchase',
-        merchant:'Campus Bookstore',
-        orderTotalUsd:Math.round(total * 100) / 100,
-        paymentComposition:breakdown.map(part => ({ currency:part.code, amount:part.units }))
-      });
+    breakdown.forEach((item,index) => {
+      value.balances[item.code] = Math.max(0,Math.round((Number(value.balances[item.code])-item.units)*100)/100);
+      value.transactions.unshift({ id:`BOOK-${now.toString(36).toUpperCase()}-${index+1}`, amount:-item.units, currency:item.code, label:'Campus Bookstore purchase', at, createdAt:now+index, kind:'purchase', merchant:'Campus Bookstore', orderTotalUsd:Math.round(total*100)/100, paymentComposition:breakdown.map(part => ({ currency:part.code, amount:part.units })) });
     });
-    value.balance = Math.round(Number(value.balances.USD) * 100) / 100;
+    value.balance = Math.round(Number(value.balances.USD)*100)/100;
     persistSession(value);
     payment.itemCurrencies.clear();
     committing = false;
@@ -313,43 +287,27 @@
     restoreScroll();
   }
 
-  function queue() {
-    if (!frame) frame = requestAnimationFrame(sync);
-  }
+  function queue() { if (!frame) frame = requestAnimationFrame(sync); }
 
-  document.addEventListener('pointerdown', event => {
+  document.addEventListener('pointerdown',event => {
     if (!event.target.closest?.('[data-bookstore-ui-v1] [data-cb-qty]')) return;
     captureScroll();
-  }, true);
+  },true);
 
-  document.addEventListener('click', event => {
+  document.addEventListener('click',event => {
     const scope = event.target.closest?.('[data-bookstore-ui-v1]');
     if (!scope) return;
-
     const quantity = event.target.closest('[data-cb-qty]');
-    if (quantity) {
-      captureScroll();
-      requestAnimationFrame(() => requestAnimationFrame(restoreScroll));
-      return;
-    }
-
+    if (quantity) { captureScroll(); requestAnimationFrame(() => requestAnimationFrame(restoreScroll)); return; }
     const place = event.target.closest('.cb-place-order');
     if (place) {
-      if (place.dataset.cbWalletCommitted === '1') {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return;
-      }
-      if (!commitWalletPayment(scope)) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return;
-      }
+      if (place.dataset.cbWalletCommitted === '1') { event.preventDefault(); event.stopImmediatePropagation(); return; }
+      if (!commitWalletPayment(scope)) { event.preventDefault(); event.stopImmediatePropagation(); return; }
       place.dataset.cbWalletCommitted = '1';
     }
-  }, true);
+  },true);
 
-  document.addEventListener('change', event => {
+  document.addEventListener('change',event => {
     const scope = event.target.closest?.('[data-bookstore-ui-v1]');
     if (!scope) return;
     if (event.target.matches('[data-cb-pay-basic]')) payment.basicCurrency = event.target.value === 'BEACH' ? 'BEACH' : 'USD';
@@ -357,25 +315,26 @@
     else if (event.target.matches('[data-cb-pay-mode]')) payment.allocationMode = event.target.value === 'item' ? 'item' : 'split';
     else if (event.target.matches('[data-cb-pay-a]')) payment.currencyA = event.target.value === 'BEACH' ? 'BEACH' : 'USD';
     else if (event.target.matches('[data-cb-pay-b]')) payment.currencyB = event.target.value === 'BEACH' ? 'BEACH' : 'USD';
-    else if (event.target.matches('[data-cb-pay-item]')) payment.itemCurrencies.set(event.target.dataset.cbPayItem, event.target.value === 'BEACH' ? 'BEACH' : 'USD');
+    else if (event.target.matches('[data-cb-pay-item]')) payment.itemCurrencies.set(event.target.dataset.cbPayItem,event.target.value === 'BEACH' ? 'BEACH' : 'USD');
+    else if (event.target.matches('[data-cb-pay-split]')) payment.splitPercent = Math.max(0,Math.min(100,Number(event.target.value)||0));
     else return;
     updatePaymentOnly();
   });
 
-  document.addEventListener('input', event => {
+  document.addEventListener('input',event => {
     if (!event.target.matches?.('[data-cb-pay-split]')) return;
-    payment.splitPercent = Math.max(0, Math.min(100, Number(event.target.value) || 0));
-    updatePaymentOnly();
+    payment.splitPercent = Math.max(0,Math.min(100,Number(event.target.value)||0));
+    updateSplitPreview(event.target);
   });
 
   const start = () => {
     const shell = $('#campusAppsShell');
     if (!shell) return;
-    new MutationObserver(queue).observe(shell, { childList:true, subtree:true, attributes:true, attributeFilter:['hidden'] });
-    window.addEventListener('campus-session-changed', queue);
+    new MutationObserver(queue).observe(shell,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
+    window.addEventListener('campus-session-changed',queue);
     queue();
   };
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once:true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();

@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const version = '20260812-9';
+  const version = '20260812-15';
   const styles = [
     ['campus-currencies', 'styles/campus-currencies.css'],
     ['campus-faucet-drops', 'styles/campus-faucet-drops.css'],
@@ -18,7 +18,9 @@
     ['buddy-demo-runtime', 'styles/buddy-demo-runtime.css'],
     ['demo-refinement', 'styles/demo-refinement.css'],
     ['demo-regression-fix', 'styles/demo-regression-fix.css'],
-    ['demo-regression-fix-v2', 'styles/demo-regression-fix-v2.css']
+    ['demo-regression-fix-v2', 'styles/demo-regression-fix-v2.css'],
+    ['demo-storefront-cleanup', 'styles/demo-storefront-cleanup.css'],
+    ['demo-ui-regression-fix-v3', 'styles/demo-ui-regression-fix-v3.css']
   ];
 
   styles.forEach(([name, href]) => {
@@ -43,11 +45,13 @@
   loadScript('data-campus-bookstore-v1', 'src/campus-bookstore-integration.js');
   loadScript('data-campus-bookstore-selection', 'src/campus-bookstore-selection.js');
   loadScript('data-campus-bookstore-parity', 'src/campus-bookstore-parity.js');
-  loadScript('data-campus-bookstore-wallet-checkout', 'src/campus-bookstore-wallet-checkout.js');
+  loadScript('data-demo-checkout-edge-fix', 'src/demo-checkout-edge-fix.js');
+  loadScript('data-demo-storefront-cleanup', 'src/demo-storefront-cleanup.js');
+  loadScript('data-campus-bookstore-wallet-checkout', 'src/campus-bookstore-wallet-checkout-v2.js');
   loadScript('data-campus-faucet-v4', 'src/campus-faucet-integration-v4.js');
   loadScript('data-campus-app-runtime', 'src/campus-app-runtime.js');
   loadScript('data-buddy-demo-runtime', 'src/buddy-demo-runtime.js');
   loadScript('data-demo-refinement', 'src/demo-refinement.js');
-  loadScript('data-demo-refinement-stability', 'src/demo-refinement-stability.js');
-  loadScript('data-demo-regression-fix', 'src/demo-regression-fix.js');
+  loadScript('data-demo-bookstore-postflight', 'src/demo-bookstore-postflight.js');
+  loadScript('data-demo-ui-regression-fix-v3', 'src/demo-ui-regression-fix-v3.js');
 })();
