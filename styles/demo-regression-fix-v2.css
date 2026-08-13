@@ -1,0 +1,26 @@
+/* Focused UI corrections for the restored wardrobe and Bookstore layouts. */
+
+/* Wardrobe dropdowns must paint above the following clothing rows instead of being clipped/covered. */
+.wardrobe-options[data-demo-picker-only="1"]{position:relative!important;overflow:visible!important;isolation:auto!important}
+.wardrobe-options[data-demo-picker-only="1"]:has(.demo-wardrobe-picker-button[aria-expanded="true"]){z-index:120!important}
+.demo-wardrobe-picker{position:relative!important;z-index:1!important;overflow:visible!important}
+.demo-wardrobe-picker:has(.demo-wardrobe-picker-button[aria-expanded="true"]){z-index:140!important}
+.demo-wardrobe-menu{z-index:150!important;overflow:auto!important;box-shadow:8px 12px 28px rgba(15,28,55,.28)!important}
+.layered-wardrobe,.panel-wardrobe-category,.panel-wardrobe-category .wardrobe-options{overflow:visible!important}
+
+/* Keep the restored three-column cards, but return the purchase controls to compact proportions. */
+.cb-product-purchase-row{grid-template-columns:82px minmax(118px,142px)!important;justify-content:space-between!important;align-items:center!important;gap:10px!important}
+.cb-product-purchase-row>.cb-add-button{width:142px!important;max-width:142px!important;justify-self:end!important;padding-inline:14px!important}
+
+/* Modal/cart contexts keep their own wider controls. */
+.cb-modal-purchase{grid-template-columns:95px minmax(0,1fr)!important}
+.cb-cart-item-actions{grid-template-columns:auto minmax(0,1fr)!important}
+
+@media(max-width:820px){
+  .cb-product-purchase-row{grid-template-columns:78px minmax(112px,132px)!important;gap:8px!important}
+  .cb-product-purchase-row>.cb-add-button{width:132px!important;max-width:132px!important;padding-inline:10px!important}
+}
+@media(max-width:560px){
+  .cb-product-purchase-row{grid-template-columns:78px minmax(0,1fr)!important}
+  .cb-product-purchase-row>.cb-add-button{width:100%!important;max-width:none!important}
+}
