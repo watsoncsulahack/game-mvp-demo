@@ -1,0 +1,46 @@
+// Architecture sketch only; not loaded by the game.
+function createInitialState() {
+  return {
+    section:'shop',
+    query:{ search:'', categories:new Set(), brands:new Set(), sizes:new Set(), price:'all', collectibleOnly:false, inStockOnly:true, sort:'featured' },
+    ui:{ view:'grid', searchOpen:false, filtersOpen:false, cartOpen:false, selectedProductId:null },
+    cart:[], orders:[], fulfillment:'pickup'
+  };
+}
+
+function productById(products,id) {
+  return products.find(product => product.id === String(id)) || null;
+}
+
+function visibleProducts(products,state) {
+  const search = state.query.search.trim().toLowerCase();
+  return products.filter(product => {
+    const category = product.commerce.category;
+    const brand = product.commerce.brand;
+    const sizes = product.attributes?.sizes || [];
+    const price = Number(product.commerce.price.amount);
+    const stock = Number(product.commerce.inventory.stock);
+    const searchable = `${product.name} ${product.description} ${category} ${brand} ${product.course?.code || ''}`.toLowerCase();
+    return (!search || searchable.includes(search))
+      && (!state.query.categories.size || state.query.categories.has(category))
+      && (!state.query.brands.size || state.query.brands.has(brand))
+      && (!state.query.sizes.size || sizes.some(size => state.query.sizes.has(size)))
+      && (!state.query.collectibleOnly || product.attributes?.collectible === true)
+      && (!state.query.inStockOnly || stock > 0)
+      && (state.query.price === 'all'
+        || (state.query.price === 'under25' && price < 25)
+        || (state.query.price === '25to50' && price >= 25 && price <= 50)
+        || (state.query.price === 'over50' && price > 50));
+  });
+}
+
+function cartSubtotal(products,cart) {
+  return cart.reduce((sum,item) => {
+    const product = productById(products,item.productId);
+    return sum + (product ? product.commerce.price.amount * item.quantity : 0);
+  },0);
+}
+
+// Intended dependency direction:
+// data/products.js -> bookstore.js -> rendered UI
+// Course books are normal products with course metadata, not a second store.
