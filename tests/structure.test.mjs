@@ -28,7 +28,6 @@ const CANONICAL_SCRIPTS = [
   'src/finance.js',
   'src/buddy.js',
   'src/demo.js',
-  'src/demo-ui.js',
   'app.js'
 ];
 
@@ -40,6 +39,7 @@ const HISTORICAL_FRAGMENTS = [
   'src/campus-course-store.js',
   'src/campus-bookstore-checkout.js',
   'src/campus-finance.js',
+  'src/demo-ui.js',
   'src/campus-faucet-integration.js',
   'src/campus-faucet-integration-v4.js',
   'src/campus-app-runtime.js',
@@ -78,11 +78,14 @@ const HISTORICAL_FRAGMENTS = [
 
 const TRANSIENT_SPIKE_FILES = [
   'src/bookstore.runtime.js',
+  'src/demo.runtime.js',
   'src/bookstore-merged.review.js',
   'src/bookstore-core.review.js',
   'src/bookstore-consolidated-outline.js',
   'index.consolidated.review.html',
-  'tests/structure.consolidated.review.mjs'
+  'index.final.review.html',
+  'tests/structure.consolidated.review.mjs',
+  'tests/structure.final.review.mjs'
 ];
 
 test('entrypoint explicitly loads the canonical game files', () => {
