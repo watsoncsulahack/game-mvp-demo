@@ -8,10 +8,10 @@ const CANONICAL_STYLES = [
   'styles/onboarding.css',
   'styles/game.css',
   'styles/overlays.css',
-  'styles/campus-apps.css',
-  'styles/campus-finance.css',
-  'styles/campus-bookstore.css',
-  'styles/campus-ui.css',
+  'styles/apps.css',
+  'styles/finance.css',
+  'styles/bookstore.css',
+  'styles/apps-ui.css',
   'styles/buddy.css',
   'styles/demo.css'
 ];
@@ -22,13 +22,10 @@ const CANONICAL_SCRIPTS = [
   'src/room.js',
   'src/explorer.js',
   'src/ui.js',
-  'src/campus-apps.js',
-  'src/campus-email-qr.js',
-  'src/campus-bookstore.js',
-  'src/campus-bookstore-ui.js',
-  'src/campus-course-store.js',
-  'src/campus-bookstore-checkout.js',
-  'src/campus-finance.js',
+  'src/apps.js',
+  'src/email-qr.js',
+  'src/bookstore.js',
+  'src/finance.js',
   'src/buddy.js',
   'src/demo.js',
   'src/demo-ui.js',
@@ -36,6 +33,13 @@ const CANONICAL_SCRIPTS = [
 ];
 
 const HISTORICAL_FRAGMENTS = [
+  'src/campus-apps.js',
+  'src/campus-email-qr.js',
+  'src/campus-bookstore.js',
+  'src/campus-bookstore-ui.js',
+  'src/campus-course-store.js',
+  'src/campus-bookstore-checkout.js',
+  'src/campus-finance.js',
   'src/campus-faucet-integration.js',
   'src/campus-faucet-integration-v4.js',
   'src/campus-app-runtime.js',
@@ -49,6 +53,10 @@ const HISTORICAL_FRAGMENTS = [
   'src/demo-refinement.js',
   'src/demo-bookstore-postflight.js',
   'src/demo-ui-regression-fix-v3.js',
+  'styles/campus-apps.css',
+  'styles/campus-finance.css',
+  'styles/campus-bookstore.css',
+  'styles/campus-ui.css',
   'styles/campus-currencies.css',
   'styles/campus-faucet-drops.css',
   'styles/campus-faucet-cards.css',
@@ -68,6 +76,15 @@ const HISTORICAL_FRAGMENTS = [
   'styles/demo-ui-regression-fix-v3.css'
 ];
 
+const TRANSIENT_SPIKE_FILES = [
+  'src/bookstore.runtime.js',
+  'src/bookstore-merged.review.js',
+  'src/bookstore-core.review.js',
+  'src/bookstore-consolidated-outline.js',
+  'index.consolidated.review.html',
+  'tests/structure.consolidated.review.mjs'
+];
+
 test('entrypoint explicitly loads the canonical game files', () => {
   const html = read('index.html');
   for (const file of [...CANONICAL_STYLES, ...CANONICAL_SCRIPTS]) {
@@ -78,9 +95,9 @@ test('entrypoint explicitly loads the canonical game files', () => {
   assert.doesNotMatch(html, /<script(?![^>]+src=)[^>]*>\s*\S/i);
 });
 
-test('historical patch-stack files stay removed', () => {
+test('historical and transient fragment files stay removed', () => {
   const html = read('index.html');
-  for (const file of HISTORICAL_FRAGMENTS) {
+  for (const file of [...HISTORICAL_FRAGMENTS, ...TRANSIENT_SPIKE_FILES]) {
     assert.equal(fs.existsSync(`${root}/${file}`), false, `${file} should not return as a standalone fragment`);
     assert.doesNotMatch(html, new RegExp(file.replace(/[./]/g, '\\$&')));
   }
