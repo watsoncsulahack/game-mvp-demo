@@ -1,0 +1,1 @@
+The live consolidation is being implemented as an order-preserving concatenation of the currently loaded runtime sections. No historical behavior should be deleted merely to reduce file count. After the consolidated branch is locally smoke-tested, redundant DOM patching and duplicate state can be simplified inside the monolithic subsystem files.
