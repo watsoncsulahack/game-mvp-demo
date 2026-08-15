@@ -1,0 +1,1 @@
+Activation target for agent/bookstore-consolidation-spike. Safety-only branch; no runtime entrypoint change is made here.
