@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "format": "png",
+  "canvas": {
+    "width": 256,
+    "height": 640,
+    "origin": "top-left",
+    "alignment": "Matches src/character.js turnaround cell; render at x=0 y=0 without per-view offsets or scaling."
+  },
+  "views": [
+    "front",
+    "left-quarter-front",
+    "left-side",
+    "left-quarter-rear",
+    "rear",
+    "right-quarter-rear",
+    "right-side",
+    "right-quarter-front"
+  ],
+  "items": {
+    "classic-tee": {
+      "category": "tops",
+      "type": "tee",
+      "variant": "classic",
+      "path": "tops/tee/classic/{view}.png"
+    },
+    "wide-leg-jeans": {
+      "category": "pants",
+      "type": "jeans",
+      "variant": "wide-leg",
+      "path": "pants/jeans/wide-leg/{view}.png"
+    },
+    "low-top-sneakers": {
+      "category": "shoes",
+      "type": "sneakers",
+      "variant": "low-top",
+      "path": "shoes/sneakers/low-top/{view}.png"
+    }
+  },
+  "presets": {
+    "casual": {
+      "label": "Casual",
+      "layers": [
+        "classic-tee",
+        "wide-leg-jeans",
+        "low-top-sneakers"
+      ]
+    }
+  }
+}
